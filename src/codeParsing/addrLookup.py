@@ -1,10 +1,21 @@
+"""
+this class is used to lookup the bytecode of a contract.
+It uses the alchemy api to get the bytecode and then uses evmDasm to disassemble it.
+
+Raises:
+    requests.HTTPError: _description_
+    Exception: _description_
+"""
+
 import json
-# import evmDasm
+from time import time
+import sqlite3
 import requests
 import evmdasm
 import os
 from dotenv import load_dotenv
 import logging
+from itertools import chain
 
 load_dotenv()
 
@@ -15,29 +26,28 @@ class EthGetCode:
         "id": 0,
         "jsonrpc": "2.0",
         "params": [None, "latest"],
-        "method": "eth_getCode"
+        "method": "eth_getCode",
     }
-    __headers = {
-        "accept": "application/json",
-        "content-type": "application/json"
-    }
+    __headers = {"accept": "application/json", "content-type": "application/json"}
 
     @staticmethod
     def getCode(_addr: str, _id: int) -> evmdasm.EvmInstructions:
         paylode = EthGetCode.__payload
-        paylode['id'] = _id
-        paylode['params'][0] = _addr
+        paylode["id"] = _id
+        paylode["params"][0] = _addr
         logging.info(json.dumps(paylode, indent=4))
+
         response = requests.post(
-            EthGetCode.__url,
-            json=paylode,
-            headers=EthGetCode.__headers)
+            EthGetCode.__url, json=paylode, headers=EthGetCode.__headers
+        )
 
         if response.status_code != 200:
-            error = json.loads(response.text)['error']
-            raise requests.HTTPError(f"\n{response.status_code = }\n{error['code'] = }\n{error['message'] = }")
+            error = json.loads(response.text)["error"]
+            raise requests.HTTPError(
+                f"\n{response.status_code = }\n{error['code'] = }\n{error['message'] = }"
+            )
 
-        byteCode = json.loads(response.text)['result']
+        byteCode = json.loads(response.text)["result"]
         evmCode = evmdasm.EvmBytecode(byteCode)
         evmInstructions = evmCode.disassemble()
 
@@ -45,61 +55,97 @@ class EthGetCode:
 
 
 class ByteCodeIO:
-    contractsPath = "contractsParsed.jsonl"
+    def __init__(self, dbPath: str = "contStore.db"):
+        self.sqliteConnection = sqlite3.connect("contStore.db")
+        self.cursor = self.sqliteConnection.cursor()
+        logging.info("Connected to SQLite")
 
-    @staticmethod
-    def writeCode(_addr: str, instructions: evmdasm.EvmInstructions, **kwargs):
-        cont = {
-            'Code':
-                [{
-                    'Name': instr.name,
-                    'Operand': instr.operand
-                } for instr in instructions],
-            'Addr': _addr,
-        }
-        for key, value in zip(kwargs.keys(), kwargs.values()):
-            if key in ['Code', 'Addr']:
-                continue
-            cont[key] = value
+    def __enter__(self):
+        return self
 
-        # todo: add appending to JsonL file
-        ByteCodeIO.__writeDict(cont)
-        logging.info("Code not completed for writeCode function")
-        exit()
+    def writeCode(self, _addr: str, instructions: evmdasm.EvmInstructions, **kwargs):
+        sqlite_insert_query = """INSERT INTO cont
+                            (address, name, bytecode) 
+                            VALUES (?, ?, ?);"""
+        record: tuple[str, str, str] = (
+            _addr,
+            str(instructions),
+            kwargs.get("Name", "N/A"),
+        )
 
-    @staticmethod
-    def __writeDict(data: dict):
-        del data['Code']
-        if not os.path.exists(ByteCodeIO.contractsPath):
-            with open(ByteCodeIO.contractsPath, 'w+') as f:
-                pass
-        with open(ByteCodeIO.contractsPath, 'r+') as contracts:
-            line = contracts.readline()
+        logging.info("Inserting multiple record into cont table ...")
+        try:
+            self.cursor.execute(sqlite_insert_query, record)
+            self.sqliteConnection.commit()
+        except sqlite3.OperationalError as e:
+            raise e
+        except sqlite3.Error as error:
+            logging.critical("Failed to insert records into sqlite table\n", error)
+            raise (error)
 
-            if line == '':
-                jout = json.dumps(data)
-                contracts.write(jout + '\n')
-                logging.info("File empty")
-                return
-            found = False
-            while line:
-                if json.loads(line)['Addr'] == data['Addr']:
-                    logging.info("address already found")
-                    jout = json.dumps(data)
-                    contracts.writelines(jout + '\n')
-                    exit(0)
-                else:
-                    line = contracts.readline()
-                    logging.info(f"Cont is not found: {line}")
-                    contracts.writelines(line + '\n')
-                line = contracts.readline()
+    def addTags(self, _addr: str, tags: list[str]):
+        # create table if it doesn't exist
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS tagTable (address, tags)")
 
-    @staticmethod
-    def readCode(path: str):
-        pass
+        # check for existing tags
+        sqlite_select_query = (
+            """SELECT * from tagTable where tags = ? AND address = ?"""
+        )
+        self.cursor.execute(sqlite_select_query, (_addr,))
+        records = self.cursor.fetchall()
+        if len(records) > 0:
+            # if there are existing tags, add the new tags to the list
+            print(records)
+            exit(0)
+
+        # if there are no existing tags, create a new record
+        sqlite_insert_query = """INSERT INTO tagTable
+                            (address, tags) 
+                            VALUES (?, ?);"""
+        record: tuple[str, str] = (_addr, str(tags))
+        try:
+            self.cursor.execute(sqlite_insert_query, record)
+            self.sqliteConnection.commit()
+        except sqlite3.OperationalError as e:
+            raise e
+        except sqlite3.Error as error:
+            logging.critical("Failed to insert records into sqlite table\n", error)
+            raise (error)
+
+    def inNames(self, name: str | list[str]) -> bool | list[str]:
+        if isinstance(name, str):
+            sqlite_select_query = """SELECT * from cont where name = ?"""
+            self.cursor.execute(sqlite_select_query, (name,))
+            records = self.cursor.fetchall()
+            return len(records) > 0
+        if isinstance(name, list):
+            sqlite_select_query = """SELECT name from cont"""
+            self.cursor.execute(sqlite_select_query)
+            records = self.cursor.fetchall()
+            records = list(chain.from_iterable(records))
+            # find all values in name that are not in records
+            return [n for n in name if n not in records]
+
+        else:
+            raise Exception("name must be of type str or list[str]")
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.cursor:
+            self.cursor.close()
+            logging.info("The SQLite cursor is closed")
+        if self.sqliteConnection:
+            self.sqliteConnection.close()
+            logging.info("The SQLite connection is closed")
 
 
-if __name__ == '__main__':
-    addr = '0x4da27a545c0c5B758a6BA100e3a049001de870f5'
-    code = EthGetCode.getCode(addr, 0)
-    ByteCodeIO.writeCode(addr, code)
+if __name__ == "__main__":
+    raise Exception("This file should not be run as main")
+#     addr = '0x4da27a545c0c5B758a6BA100e3a049001de870f5'
+#     code = EthGetCode.getCode(addr, 0)
+#     ByteCodeIO.writeCode(addr, code)
+
+"""
+Book meeting for presentation before the 18th
+can ask for an extension if needed to 1st week of september
+else she will flunk the whole year and she will have to repeat the whole year
+"""
