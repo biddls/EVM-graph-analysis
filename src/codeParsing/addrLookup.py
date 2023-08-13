@@ -65,7 +65,7 @@ class ByteCodeIO:
 
     def writeCode(self, _addr: str, instructions: evmdasm.EvmInstructions, **kwargs):
         sqlite_insert_query = """INSERT INTO cont
-                            (address, name, bytecode) 
+                            (address text PRIMARY KEY, name text, bytecode) 
                             VALUES (?, ?, ?);"""
         record: tuple[str, str, str] = (
             _addr,
@@ -100,7 +100,7 @@ class ByteCodeIO:
 
         # if there are no existing tags, create a new record
         sqlite_insert_query = """INSERT INTO tagTable
-                            (address, tags) 
+                            (address text PRIMARY KEY, tags) 
                             VALUES (?, ?);"""
         record: tuple[str, str] = (_addr, str(tags))
         try:

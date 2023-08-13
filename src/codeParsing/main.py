@@ -1,3 +1,7 @@
+"""
+Reads in a csv of addresses and names, and then looks up the bytecode of each address.
+"""
+
 from addrLookup import EthGetCode, ByteCodeIO
 import pandas as pd
 import logging
@@ -43,5 +47,4 @@ Compare to walks of a single type of similarity
 JSON Lines
 high perf storage python
 SQL light
-
 """
