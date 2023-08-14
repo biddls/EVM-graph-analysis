@@ -1,60 +1,71 @@
-from typing import Iterator, Self
+from typing import Iterator, Self, Union
 import evmdasm
 
 
 class Contract:
     byteCode: evmdasm.EvmInstructions
     address: str
-    name: str
     group: str
     description: str
     tags: set[str]
 
     def __init__(
         self,
-        text: list[str],
-        link: str | list[str],
+        text: Union[list[str], set[str]],
+        addr: str | list[str],
+        source: str,
         byteCode: evmdasm.EvmInstructions | None = None,
     ) -> None:
-        if not isinstance(link, str):
-            raise TypeError(f"Invalid link type\n{link = }")
+        if not isinstance(addr, str):
+            raise TypeError(f"Invalid link type\n{addr = }")
 
         if isinstance(byteCode, evmdasm.EvmInstructions):
             self.byteCode = byteCode
 
-        self.address: str = link.split("https://etherscan.io/address/")[-1]
-        # print(f"{text = }")
-        if len(text) == 4:
-            # process it with typing
-            self.name = text[0]
-            self.group = text[1]
-            self.description = text[2]
-            self.tags = {*text[:3]}
-            self.tags = set(filter(lambda x: x != "", self.tags))
-            self.tags = set(filter(lambda x: "..." not in x, self.tags))
-        elif len(text) == 3:
-            # process it without typing
-            self.name = text[0]
-
-            if "..." in self.name:
-                self.tags = set()
-            else:
-                self.tags = {self.name}
+        if addr.startswith("https://etherscan.io/address/"):
+            self.address: str = addr.split("https://etherscan.io/address/")[-1]
         else:
-            raise Exception(f"Invalid contract tag format:\n{len(text) = } \n{text = }")
+            self.address = addr
+
+        match source:
+            case "ultrasound":
+                if isinstance(text, set):
+                    raise TypeError(
+                        f"Invalid type for text\ntext should be a {list.__name__} for case: {source}\n{text = }"
+                    )
+                if len(text) == 4:
+                    self.tags = {*text[:3]}
+                    self.tags = set(filter(lambda x: x != "", self.tags))
+                    self.tags = set(filter(lambda x: "..." not in x, self.tags))
+                elif len(text) == 3:
+                    if "..." in text[0]:
+                        self.tags = set()
+                    else:
+                        self.tags = {text[0]}
+                else:
+                    raise Exception(
+                        f"Invalid contract tag format:\n{len(text) = } \n{text = }"
+                    )
+            case "etherscanTags":
+                if not isinstance(text, set):
+                    raise TypeError(
+                        f"Invalid type for text\ntext should be a {set.__name__} for case: {source}\n{text = }"
+                    )
+                self.tags = {*text}
+            case "noTags":
+                ...
+            case _:
+                raise Exception(f"Invalid source: {source}")
 
     def addByteCode(self, byteCode: evmdasm.EvmInstructions) -> None:
         self.byteCode = byteCode
 
     # returns a string representation of the object
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.tags = }, {self.address = })"
+        return f"{self.__class__.__name__}( {self.address = }, {self.tags = })"
 
     def __str__(self) -> str:
-        tagsExName = self.tags.difference({self.name})
-        if len(tagsExName) == 0:
-            return f"{self.address}|{self.name}"
-        return f"{self.address}|{self.name}|{tagsExName}"
+        return f"{self.address}|{self.tags}"
 
     # appends the tags of the other contract to this one
     def __add__(self, other: Self) -> Self:

@@ -1,30 +1,80 @@
 """
 This function scrapes the data from the labelcloud page of etherscan.io
 """
-
-from bs4 import BeautifulSoup as bs
+import bs4 as bs
 import undetected_chromedriver as uc
-from time import sleep
+import time
+from contractObj import Contract
 
 
-def getTags(addr: str) -> set[str]:
-    if not addr.startswith("0x"):
-        raise Exception(f"Invalid address format:\n{addr = }")
-    if len(addr) != 42:
-        raise Exception(f"Invalid address length should be 42:\n{addr = }")
+def suppress_exception_in_del(uc):
+    old_del = uc.Chrome.__del__
 
-    ## Get tags from the tokens page
-    options = uc.ChromeOptions()
-    options.add_argument("--headless")
-    driver = uc.Chrome(use_subprocess=True, options=options)
-    driver.get(f"https://etherscan.io/address/{addr}")
-    sleep(5)
-    contents = driver.page_source
-    driver.close()
-    soup = bs(contents, "lxml")
+    def new_del(self) -> None:
+        try:
+            old_del(self)
+        except:
+            pass
+
+    setattr(uc.Chrome, "__del__", new_del)
+
+
+suppress_exception_in_del(uc)
+
+
+class TagGetter:
+    def __init__(self):
+        options = uc.ChromeOptions()
+        options.add_argument("--headless")  # type: ignore
+        self.driver = uc.Chrome(options=options)
+
+    def getTags(
+        self, addr: str, site: str = "etherscan", maxDuration: int = 5
+    ) -> Contract:
+        if not addr.startswith("0x"):
+            raise Exception(f"Invalid address format:\n{addr = }")
+        if len(addr) != 42:
+            raise Exception(f"Invalid address length should be 42:\n{addr = }")
+
+        match site:
+            case "etherscan":
+                return self.etherScanGetter(addr, maxDuration)
+            case _:
+                raise Exception(f"Invalid site:\n{site = }")
+
+    def etherScanGetter(self, addr: str, maxDuration: int) -> Contract:
+        self.driver.get(f"https://etherscan.io/address/{addr}")
+        start: float = time.time()
+        while True:
+            contents: str = self.driver.page_source
+
+            soup = bs.BeautifulSoup(contents, "lxml")
+
+            # find elemet div with class d-flex flex-wrap align-items-center gap-1
+            div: bs.element.Tag | bs.element.NavigableString | None = soup.find(
+                "div", {"class": "d-flex flex-wrap align-items-center gap-1"}
+            )
+
+            if not isinstance(div, bs.element.Tag):
+                raise Exception(f"Invalid div type:\n{type(div) = }")
+
+            spans: bs.ResultSet = div.find_all("span")
+            tags: set[str] = {span.text for span in spans}
+
+            if len(tags) > 0:
+                cont = Contract(tags, addr, "etherscanTags")
+                return cont
+
+            if time.time() - start > maxDuration:
+                return Contract(set(), addr, "noTags")
 
 
 if __name__ == "__main__":
     print("This is a module, not a script")
     # 0x protocol
-    tags = getTags("0xdef1c0ded9bec7f1a1670819833240f027b25eff")
+    tagGetter = TagGetter()
+    start = time.time()
+    tags = tagGetter.getTags("0xdef1c0ded9bec7f1a1670819833240f027b25eff")
+    end = time.time()
+    print(f"Scrape time: {end - start:.2f}s")
+    print(tags)

@@ -58,7 +58,7 @@ def getAddresses() -> list[Contract]:
         text = [content.text for content in link.contents]
         # print(f"{text = }")
         # print(f"{link['href'] = }")
-        conts.append(Contract(text, link["href"]))
+        conts.append(Contract(text, link["href"], "ultrasound"))
 
     return conts
 

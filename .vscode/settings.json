@@ -12,5 +12,14 @@
   },
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
-  }
+  },
+  "sqltools.useNodeRuntime": true,
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "driver": "SQLite",
+      "name": "contracts",
+      "database": "${workspaceFolder:EVM project}/contStore.db"
+    }
+  ]
 }

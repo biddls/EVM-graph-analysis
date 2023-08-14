@@ -16,6 +16,8 @@ import os
 from dotenv import load_dotenv
 import logging
 from itertools import chain
+from addressScraping.contractObj import Contract
+from typing import Iterable
 
 load_dotenv()
 
@@ -63,14 +65,17 @@ class ByteCodeIO:
     def __enter__(self):
         return self
 
+    def writeContract(self, cont: Contract):
+        self.writeCode(cont.address, cont.byteCode)
+
     def writeCode(self, _addr: str, instructions: evmdasm.EvmInstructions, **kwargs):
         sqlite_insert_query = """INSERT INTO cont
-                            (address text PRIMARY KEY, name text, bytecode) 
+                            (address, name, bytecode) 
                             VALUES (?, ?, ?);"""
         record: tuple[str, str, str] = (
             _addr,
+            kwargs.get("Name", ""),
             str(instructions),
-            kwargs.get("Name", "N/A"),
         )
 
         logging.info("Inserting multiple record into cont table ...")
@@ -83,10 +88,8 @@ class ByteCodeIO:
             logging.critical("Failed to insert records into sqlite table\n", error)
             raise (error)
 
-    def addTags(self, _addr: str, tags: list[str]):
-        # create table if it doesn't exist
-        self.cursor.execute("CREATE TABLE IF NOT EXISTS tagTable (address, tags)")
-
+    def addTags(self, _addr: str, tags: Iterable[str]):
+        raise Exception("This function is not implemented yet")
         # check for existing tags
         sqlite_select_query = (
             """SELECT * from tagTable where tags = ? AND address = ?"""
