@@ -84,13 +84,17 @@ class WebScraper:
 
     def __call__(self, *args: Any, **kwds: Any):
         start = time()
+        counter = 0
         while True:
+            print(f"Starting run {counter}")
             self.main()
             start += 60 * 5  # 5 mins
             if time() < start:
                 start = time()
             else:
                 sleep(start - time())
+
+            counter += 1
 
     def main(self):
         contracts = self.getAddrsFromUltrasound()
@@ -102,16 +106,4 @@ class WebScraper:
 
 if __name__ == "__main__":
     scraper = WebScraper()
-
-    import cProfile
-    import pstats
-    import os
-
-    prof = cProfile.Profile()
-    prof.run("scraper.main()")
-    prof.dump_stats("output.prof")
-
-    stream = open("output.csv", "w")
-    stats = pstats.Stats("output.prof", stream=stream)
-    stats.sort_stats("cumtime")
-    stats.print_stats()
+    scraper()
