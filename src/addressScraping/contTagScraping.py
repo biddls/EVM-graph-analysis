@@ -4,7 +4,7 @@ This function scrapes the data from the labelcloud page of etherscan.io
 import bs4 as bs
 import undetected_chromedriver as uc
 import time
-from contractObj import Contract
+from addressScraping.contractObj import Contract
 
 
 def suppress_exception_in_del(uc):
@@ -55,7 +55,11 @@ class TagGetter:
                 "div", {"class": "d-flex flex-wrap align-items-center gap-1"}
             )
 
-            if not isinstance(div, bs.element.Tag):
+            if div is None:
+                if time.time() - start > maxDuration:
+                    return Contract(set(), addr, "noTags")
+                continue
+            elif not isinstance(div, bs.element.Tag):
                 raise Exception(f"Invalid div type:\n{type(div) = }")
 
             spans: bs.ResultSet = div.find_all("span")

@@ -53,7 +53,7 @@ class Contract:
                     )
                 self.tags = {*text}
             case "noTags":
-                ...
+                self.tags = set()
             case _:
                 raise Exception(f"Invalid source: {source}")
 

@@ -6,6 +6,7 @@ from addressScraping.contractObj import Contract
 from addressScraping import usMoney
 from addressScraping.contTagScraping import TagGetter
 from codeParsing.addrLookup import EthGetCode, ByteCodeIO
+from tqdm import tqdm
 
 
 class WebScraper:
@@ -23,6 +24,7 @@ class WebScraper:
             list[Contract]: List of contract objects
         """
         contracts = usMoney.getAddresses()
+        print(f"{len(contracts)} contracts found from ultrasound.money")
         return contracts
 
     @staticmethod
@@ -36,7 +38,9 @@ class WebScraper:
         Returns:
             list[Contract]: List of contract objects
         """
-        for i, cont in enumerate(contracts):
+        for i, cont in tqdm(
+            enumerate(contracts), desc="Getting ByteCode", total=len(contracts)
+        ):
             code = EthGetCode.getCode(cont.address, i)
             cont.addByteCode(code)
 
@@ -53,7 +57,10 @@ class WebScraper:
             list[Contract]: List of contract objects
         """
         contracts = list(
-            map(lambda x: x + self.tagGetter.getTags(x.address), contracts)
+            map(
+                lambda x: x + self.tagGetter.getTags(x.address),
+                tqdm(contracts, desc="Getting Tags"),
+            )
         )
         return contracts
 
@@ -66,9 +73,26 @@ class WebScraper:
         """
         with self.db() as db:
             # writes to "contracts" sheet
-            for cont in contracts:
+            for cont in tqdm(contracts, desc="Writing Contracts"):
                 db.writeContract(cont)
             # wrties tags to "addressTags" sheet
-            for cont in contracts:
+            for cont in tqdm(contracts, desc="Writing Tags"):
                 db.addTags(cont.address, cont.tags)
-            ...
+
+
+if __name__ == "__main__":
+    scraper = WebScraper()
+    contracts = scraper.getAddrsFromUltrasound()
+    contracts = scraper.getByteCode(contracts)
+
+    temp: list[Contract]
+    index = 0
+    while True:
+        if contracts[index].byteCode is not None:
+            temp = scraper.tagsFromEtherscan([contracts[index]])
+            if len(temp[0].tags) > 0:
+                break
+        index += 1
+    # contracts = scraper.tagsFromEtherscan(contracts)
+    # scraper.addContractsToDB(contracts)
+    scraper.addContractsToDB(temp)

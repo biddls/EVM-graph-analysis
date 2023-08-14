@@ -8,7 +8,7 @@ from selenium.webdriver.common.by import By
 from time import sleep
 import bs4
 from selenium.webdriver.chrome.options import Options
-from contractObj import Contract
+from addressScraping.contractObj import Contract
 
 
 def getAddresses() -> list[Contract]:

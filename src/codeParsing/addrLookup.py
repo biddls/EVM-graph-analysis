@@ -21,6 +21,11 @@ from typing import Iterable
 
 load_dotenv()
 
+logging.basicConfig(
+    level=logging.CRITICAL,
+    format=f"%(asctime)s %(levelname)s %(message)s",
+)
+
 
 class EthGetCode:
     __url = f"https://eth-mainnet.g.alchemy.com/v2/{os.getenv('alchemyApiKey')}"
@@ -69,7 +74,7 @@ class ByteCodeIO:
         self.writeCode(cont.address, cont.byteCode)
 
     def writeCode(self, _addr: str, instructions: evmdasm.EvmInstructions, **kwargs):
-        sqlite_insert_query = """INSERT INTO cont
+        sqlite_insert_query = """INSERT INTO contracts
                             (address, name, bytecode) 
                             VALUES (?, ?, ?);"""
         record: tuple[str, str, str] = (
@@ -78,36 +83,44 @@ class ByteCodeIO:
             str(instructions),
         )
 
-        logging.info("Inserting multiple record into cont table ...")
+        sqlite_select_query = """SELECT * from contracts where address = ?"""
+        self.cursor.execute(sqlite_select_query, (_addr,))
+
+        records = self.cursor.fetchall()
+        if len(records) > 0:
+            logging.info("Record already exists in contracts table")
+            return
+
+        logging.info("Inserting record into contracts table")
         try:
             self.cursor.execute(sqlite_insert_query, record)
             self.sqliteConnection.commit()
         except sqlite3.OperationalError as e:
             raise e
         except sqlite3.Error as error:
-            logging.critical("Failed to insert records into sqlite table\n", error)
+            logging.critical("Failed to insert record into sqlite table\n", error)
             raise (error)
 
     def addTags(self, _addr: str, tags: Iterable[str]):
-        raise Exception("This function is not implemented yet")
         # check for existing tags
-        sqlite_select_query = (
-            """SELECT * from tagTable where tags = ? AND address = ?"""
-        )
+        sqlite_select_query = """SELECT * from addressTags where address = ?"""
         self.cursor.execute(sqlite_select_query, (_addr,))
         records = self.cursor.fetchall()
         if len(records) > 0:
             # if there are existing tags, add the new tags to the list
             print(records)
             exit(0)
+        print(f"{tags = }")
+        raise Exception("The rest of this function is not implemented yet")
 
         # if there are no existing tags, create a new record
-        sqlite_insert_query = """INSERT INTO tagTable
-                            (address text PRIMARY KEY, tags) 
+        sqlite_insert_query = """INSERT INTO addressTags
+                            (address, tag) 
                             VALUES (?, ?);"""
-        record: tuple[str, str] = (_addr, str(tags))
+        record: list[str, str] = zip([_addr for _ in range(len(tags))], tags)
+        raise Exception("The rest of this function is not implemented yet")
         try:
-            self.cursor.execute(sqlite_insert_query, record)
+            self.cursor.executemany(sqlite_insert_query, record)
             self.sqliteConnection.commit()
         except sqlite3.OperationalError as e:
             raise e
@@ -117,12 +130,12 @@ class ByteCodeIO:
 
     def inNames(self, name: str | list[str]) -> bool | list[str]:
         if isinstance(name, str):
-            sqlite_select_query = """SELECT * from cont where name = ?"""
+            sqlite_select_query = """SELECT * from contracts where name = ?"""
             self.cursor.execute(sqlite_select_query, (name,))
             records = self.cursor.fetchall()
             return len(records) > 0
         if isinstance(name, list):
-            sqlite_select_query = """SELECT name from cont"""
+            sqlite_select_query = """SELECT name from contracts"""
             self.cursor.execute(sqlite_select_query)
             records = self.cursor.fetchall()
             records = list(chain.from_iterable(records))
