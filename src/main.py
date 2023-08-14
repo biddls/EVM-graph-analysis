@@ -2,6 +2,8 @@
 This checks N sources for address and or tags and staored the data in an SQL database
 """
 
+from time import sleep, time
+from typing import Any
 from addressScraping.contractObj import Contract
 from addressScraping import usMoney
 from addressScraping.contTagScraping import TagGetter
@@ -27,8 +29,7 @@ class WebScraper:
         print(f"{len(contracts)} contracts found from ultrasound.money")
         return contracts
 
-    @staticmethod
-    def getByteCode(contracts: list[Contract]) -> list[Contract]:
+    def getByteCode(self, contracts: list[Contract]) -> list[Contract]:
         """
         This function finds and attaches the bytecode to the contracts
 
@@ -38,11 +39,13 @@ class WebScraper:
         Returns:
             list[Contract]: List of contract objects
         """
-        for i, cont in tqdm(
-            enumerate(contracts), desc="Getting ByteCode", total=len(contracts)
-        ):
-            code = EthGetCode.getCode(cont.address, i)
-            cont.addByteCode(code)
+        with self.db() as db:
+            for i, cont in tqdm(
+                enumerate(contracts), desc="Getting ByteCode", total=len(contracts)
+            ):
+                if db.inColumn("contracts", "address", cont.address):
+                    code = EthGetCode.getCode(cont.address, i)
+                    contracts[i].addByteCode(code)
 
         return contracts
 
@@ -79,20 +82,36 @@ class WebScraper:
             for cont in tqdm(contracts, desc="Writing Tags"):
                 db.addTags(cont.address, cont.tags)
 
+    def __call__(self, *args: Any, **kwds: Any):
+        start = time()
+        while True:
+            self.main()
+            start += 60 * 5  # 5 mins
+            if time() < start:
+                start = time()
+            else:
+                sleep(start - time())
+
+    def main(self):
+        contracts = self.getAddrsFromUltrasound()
+        contracts = self.getByteCode(contracts)
+
+        contracts = self.tagsFromEtherscan(contracts)
+        self.addContractsToDB(contracts)
+
 
 if __name__ == "__main__":
     scraper = WebScraper()
-    contracts = scraper.getAddrsFromUltrasound()
-    contracts = scraper.getByteCode(contracts)
 
-    temp: list[Contract]
-    index = 0
-    while True:
-        if contracts[index].byteCode is not None:
-            temp = scraper.tagsFromEtherscan([contracts[index]])
-            if len(temp[0].tags) > 0:
-                break
-        index += 1
-    # contracts = scraper.tagsFromEtherscan(contracts)
-    # scraper.addContractsToDB(contracts)
-    scraper.addContractsToDB(temp)
+    import cProfile
+    import pstats
+    import os
+
+    prof = cProfile.Profile()
+    prof.run("scraper.main()")
+    prof.dump_stats("output.prof")
+
+    stream = open("output.csv", "w")
+    stats = pstats.Stats("output.prof", stream=stream)
+    stats.sort_stats("cumtime")
+    stats.print_stats()

@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 import logging
 from itertools import chain
 from addressScraping.contractObj import Contract
-from typing import Iterable
+from typing import Tuple, Union
 
 load_dotenv()
 
@@ -101,24 +101,26 @@ class ByteCodeIO:
             logging.critical("Failed to insert record into sqlite table\n", error)
             raise (error)
 
-    def addTags(self, _addr: str, tags: Iterable[str]):
+    def addTags(self, _addr: str, tags: Union[list[str], set[str]]):
+        if len(tags) == 0:
+            return
         # check for existing tags
-        sqlite_select_query = """SELECT * from addressTags where address = ?"""
+        sqlite_select_query = """SELECT tag from addressTags where address = ?"""
         self.cursor.execute(sqlite_select_query, (_addr,))
         records = self.cursor.fetchall()
+
+        record: set[Tuple[str, str]] = set(zip([_addr] * len(tags), tags))
+
         if len(records) > 0:
             # if there are existing tags, add the new tags to the list
-            print(records)
-            exit(0)
-        print(f"{tags = }")
-        raise Exception("The rest of this function is not implemented yet")
+            records = set(chain.from_iterable(records))
+            record = record - records
 
         # if there are no existing tags, create a new record
         sqlite_insert_query = """INSERT INTO addressTags
                             (address, tag) 
                             VALUES (?, ?);"""
-        record: list[str, str] = zip([_addr for _ in range(len(tags))], tags)
-        raise Exception("The rest of this function is not implemented yet")
+
         try:
             self.cursor.executemany(sqlite_insert_query, record)
             self.sqliteConnection.commit()
@@ -142,8 +144,14 @@ class ByteCodeIO:
             # find all values in name that are not in records
             return [n for n in name if n not in records]
 
-        else:
+    def inColumn(self, table: str, column: str, value: str | list[str]) -> bool:
+        if not (isinstance(value, str) or isinstance(value, list)):
             raise Exception("name must be of type str or list[str]")
+
+        sqlite_select_query = f"""SELECT * from {table} where {column} = ?"""
+        self.cursor.execute(sqlite_select_query, (value,))
+        records = self.cursor.fetchall()
+        return len(records) > 0
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.cursor:
@@ -156,9 +164,9 @@ class ByteCodeIO:
 
 if __name__ == "__main__":
     raise Exception("This file should not be run as main")
-#     addr = '0x4da27a545c0c5B758a6BA100e3a049001de870f5'
-#     code = EthGetCode.getCode(addr, 0)
-#     ByteCodeIO.writeCode(addr, code)
+    # addr = '0x4da27a545c0c5B758a6BA100e3a049001de870f5'
+    # code = EthGetCode.getCode(addr, 0)
+    # ByteCodeIO.writeCode(addr, code)
 
 """
 Book meeting for presentation before the 18th

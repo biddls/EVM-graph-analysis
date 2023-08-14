@@ -3,7 +3,7 @@ import evmdasm
 
 
 class Contract:
-    byteCode: evmdasm.EvmInstructions
+    byteCode: evmdasm.EvmInstructions = None
     address: str
     group: str
     description: str
