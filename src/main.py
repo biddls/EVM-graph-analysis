@@ -26,7 +26,7 @@ class WebScraper:
             list[Contract]: List of contract objects
         """
         contracts = usMoney.getAddresses()
-        print(f"{len(contracts)} contracts found from ultrasound.money")
+        # print(f"{len(contracts)} contracts found from ultrasound.money")
         return contracts
 
     def getByteCode(self, contracts: list[Contract]) -> list[Contract]:
@@ -41,7 +41,10 @@ class WebScraper:
         """
         with self.db() as db:
             for i, cont in tqdm(
-                enumerate(contracts), desc="Getting ByteCode", total=len(contracts)
+                enumerate(contracts),
+                desc="Getting ByteCode",
+                total=len(contracts),
+                leave=False,
             ):
                 if db.inColumn("contracts", "address", cont.address):
                     code = EthGetCode.getCode(cont.address, i)
@@ -62,7 +65,7 @@ class WebScraper:
         contracts = list(
             map(
                 lambda x: x + self.tagGetter.getTags(x.address),
-                tqdm(contracts, desc="Getting Tags"),
+                tqdm(contracts, desc="Getting Tags", leave=False),
             )
         )
         return contracts
@@ -76,10 +79,10 @@ class WebScraper:
         """
         with self.db() as db:
             # writes to "contracts" sheet
-            for cont in tqdm(contracts, desc="Writing Contracts"):
+            for cont in tqdm(contracts, desc="Writing Contracts", leave=False):
                 db.writeContract(cont)
             # wrties tags to "addressTags" sheet
-            for cont in tqdm(contracts, desc="Writing Tags"):
+            for cont in tqdm(contracts, desc="Writing Tags", leave=False):
                 db.addTags(cont.address, cont.tags)
 
     def __call__(self, *args: Any, **kwds: Any):
@@ -89,10 +92,12 @@ class WebScraper:
             print(f"Starting run {counter}")
             self.main()
             start += 60 * 5  # 5 mins
-            if time() < start:
+            if time() > start:
                 start = time()
             else:
-                sleep(start - time())
+                dur = start - time()
+                print(f"Sleeping for {dur:.0f} seconds")
+                sleep(dur)
 
             counter += 1
 
