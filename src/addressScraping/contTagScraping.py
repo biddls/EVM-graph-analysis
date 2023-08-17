@@ -28,9 +28,7 @@ class TagGetter:
         options.add_argument("--headless")  # type: ignore
         self.driver = uc.Chrome(options=options)
 
-    def getTags(
-        self, addr: str, site: str = "etherscan", maxDuration: int = 5
-    ) -> Contract:
+    def getTags(self, addr: str, site: str = "etherscan", maxDuration: float = 5) -> Contract:
         if not addr.startswith("0x"):
             raise Exception(f"Invalid address format:\n{addr = }")
         if len(addr) != 42:
@@ -38,12 +36,14 @@ class TagGetter:
 
         match site:
             case "etherscan":
-                return self.etherScanGetter(addr, maxDuration)
+                address = self.etherScanGetter(addr, maxDuration, "address")
+                token = self.etherScanGetter(addr, maxDuration, "token")
+                return address + token
             case _:
                 raise Exception(f"Invalid site:\n{site = }")
 
-    def etherScanGetter(self, addr: str, maxDuration: int) -> Contract:
-        self.driver.get(f"https://etherscan.io/address/{addr}")
+    def etherScanGetter(self, addr: str, maxDuration: float, addrToken: str) -> Contract:
+        self.driver.get(f"https://etherscan.io/addrToken/{addr}")
         start: float = time.time()
         while True:
             contents: str = self.driver.page_source

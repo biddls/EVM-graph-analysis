@@ -1,9 +1,9 @@
-from typing import Iterator, Self, Union
+from typing import Iterator, Self, Union, Literal
 import evmdasm
 
 
 class Contract:
-    byteCode: evmdasm.EvmInstructions = None
+    byteCode: evmdasm.EvmInstructions | str | None = None
     address: str
     group: str
     description: str
@@ -13,8 +13,8 @@ class Contract:
         self,
         text: Union[list[str], set[str]],
         addr: str | list[str],
-        source: str,
-        byteCode: evmdasm.EvmInstructions | None = None,
+        source: Literal["ultrasound", "etherscanTags", "noTags", "forceSet"],
+        byteCode: evmdasm.EvmInstructions | str | None = None,
     ) -> None:
         if not isinstance(addr, str):
             raise TypeError(f"Invalid link type\n{addr = }")
@@ -31,12 +31,20 @@ class Contract:
             case "ultrasound":
                 if isinstance(text, set):
                     raise TypeError(
-                        f"Invalid type for text\ntext should be a {list.__name__} for case: {source}\n{text = }"
+                        f"""Invalid type for text\ntext should be a """
+                        f"""{list.__name__} for case: {source}\n{text = }"""
                     )
                 if len(text) == 4:
                     self.tags = {*text[:3]}
-                    self.tags = set(filter(lambda x: x != "", self.tags))
-                    self.tags = set(filter(lambda x: "..." not in x, self.tags))
+                    
+                    self.tags = set(
+                        filter(lambda x: x != "", self.tags)
+                    )
+                    
+                    self.tags = set(
+                        filter(lambda x: "..." not in x, self.tags)
+                    )
+                    
                 elif len(text) == 3:
                     if "..." in text[0]:
                         self.tags = set()
@@ -44,21 +52,33 @@ class Contract:
                         self.tags = {text[0]}
                 else:
                     raise Exception(
-                        f"Invalid contract tag format:\n{len(text) = } \n{text = }"
+                        f"""Invalid contract tag format:"""\
+                        f"""\n{len(text) = } \n{text = }"""
                     )
             case "etherscanTags":
                 if not isinstance(text, set):
                     raise TypeError(
-                        f"Invalid type for text\ntext should be a {set.__name__} for case: {source}\n{text = }"
+                        f"""Invalid type for text\ntext should be a """\
+                        f"""{set.__name__} for case: {source}\n{text = }"""
                     )
                 self.tags = {*text}
             case "noTags":
                 self.tags = set()
+            case "forceSet":
+                self.tags = {*text}
             case _:
                 raise Exception(f"Invalid source: {source}")
 
-    def addByteCode(self, byteCode: evmdasm.EvmInstructions) -> None:
+    def addByteCode(self, byteCode: evmdasm.EvmInstructions | str) -> None:
         self.byteCode = byteCode
+        
+    def dissassemble(self) -> evmdasm.EvmInstructions:
+        if not isinstance(self.byteCode, evmdasm.EvmInstructions):
+            raise TypeError(
+                f"Invalid type for byteCode\n{self.byteCode = }"
+            )
+        evmCode = evmdasm.EvmBytecode(self.byteCode)
+        return evmCode.disassemble()
 
     # returns a string representation of the object
     def __repr__(self) -> str:
