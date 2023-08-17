@@ -3,7 +3,7 @@ import evmdasm
 
 
 class Contract:
-    byteCode: evmdasm.EvmInstructions | str
+    byteCode: evmdasm.EvmInstructions | str = ""
     address: str
     group: str
     description: str
@@ -74,7 +74,7 @@ class Contract:
         self.byteCode = byteCode
         
     def dissassemble(self) -> evmdasm.EvmInstructions:
-        if not isinstance(self.byteCode, str):
+        if isinstance(self.byteCode, evmdasm.EvmInstructions):
             return self.byteCode
         evmCode = evmdasm.EvmBytecode(self.byteCode)
         return evmCode.disassemble()

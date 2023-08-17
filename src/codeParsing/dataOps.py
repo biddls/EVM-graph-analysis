@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 import logging
 from itertools import chain
 from addressScraping.contractObj import Contract
-from typing import Tuple, Union
+from typing import Any, Literal, Tuple, Union
 
 load_dotenv()
 
@@ -29,11 +29,11 @@ logging.basicConfig(
 
 class EthGetCode:
     __url = f"https://eth-mainnet.g.alchemy.com/v2/{os.getenv('alchemyApiKey')}"
-    __payload = {
+    __getCodePayload = {
         "id": 0,
         "jsonrpc": "2.0",
         "params": [None, "latest"],
-        "method": "eth_getCode",
+        "method": None,
     }
     __headers = {"accept": "application/json", "content-type": "application/json"}
 
@@ -43,7 +43,8 @@ class EthGetCode:
         _id: int,
         convert: bool = False
         ) -> evmdasm.EvmInstructions:
-        paylode = EthGetCode.__payload
+        paylode = EthGetCode.__getCodePayload
+        paylode["method"] = 'eth_getCode'
         paylode["id"] = _id
         paylode["params"][0] = _addr
         # logging.info(json.dumps(paylode, indent=4))
@@ -68,6 +69,54 @@ class EthGetCode:
 
         return evmInstructions
     
+    @staticmethod
+    def callEvmApi(
+        param: str,
+        method: Literal["eth_getCode", "eth_getTransactionCount"],
+        _id: int = int(time()),
+        **kwargs
+        ) -> evmdasm.EvmInstructions | Any:
+        paylode = EthGetCode.__getCodePayload
+        paylode["method"] = method
+        paylode["id"] = _id
+        paylode["params"][0] = param
+
+        response = requests.post(
+            EthGetCode.__url, json=paylode, headers=EthGetCode.__headers
+        )
+
+        if response.status_code != 200:
+            error = json.loads(response.text)["error"]
+            raise requests.HTTPError(
+                f"\n{response.status_code = }\n{error['code'] = }\n{error['message'] = }"
+            )
+
+        result = json.loads(response.text)
+
+        result = EthGetCode.__processResponce__(method, result, **kwargs)
+
+        return result
+
+    @staticmethod
+    def __processResponce__(method, result, **kwargs) -> evmdasm.EvmInstructions | Any:
+        match method:
+            case "eth_getCode":
+                byteCode = result["result"]
+                
+                if not kwargs.get("convert", False):
+                    return byteCode
+                
+                evmCode = evmdasm.EvmBytecode(byteCode)
+                evmInstructions = evmCode.disassemble()
+                return evmInstructions
+            case "eth_getTransactionCount":
+                transaction = result["result"]
+                print(transaction)
+                raise Exception("Not implemented")
+            case _:
+                raise Exception("Invalid method")
+
+
     @staticmethod
     def convertCode(
         byteCode: str

@@ -7,9 +7,13 @@ import logging
 # to shutup the logger
 logging.basicConfig(level=logging.CRITICAL)
 
-class graphGen:
-    @staticmethod
-    def findLinks(cont: Contract) -> Contract:
+class GraphGen:
+    db: ByteCodeIO
+    
+    def __init__(self) -> None:
+        self.db = ByteCodeIO()
+    
+    def findLinks(self, cont: Contract) -> Contract:
         """finds addresses in the bytecode
 
         Args:
@@ -26,14 +30,17 @@ class graphGen:
                 pass
             elif op.operand == 'ffffffffffffffffffffffffffffffffffffffff':
                 pass
-            elif graphGen.checkAddrForValidity(op.operand):
+            elif op.operand == 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee':
+                pass
+            elif op.operand == '0000000000000000000000000000000000000000':
+                pass
+            elif self.checkAddrForValidity(op.operand):
                 links.add(op.operand)
         if links:
             cont.addLinks(links)
         return cont
 
-    @staticmethod
-    def checkAddrForValidity(addr: str) -> bool:
+    def checkAddrForValidity(self, addr: str) -> bool:
         """checks if the address is valid
         Does this address have any bytecode?
         Does this address  have any transactions/ether?
@@ -45,6 +52,9 @@ class graphGen:
             bool: True if valid, False otherwise
         """
         # TODO: check if address has any bytecode
+        if self.db.inColumn("contracts", "address", addr):
+            # TODO: get bytecode and process it
+            return True
         # TODO: check if address has any transactions
         # TODO: check if address has any ether
         # TODO: check if address has already been checked
@@ -56,18 +66,17 @@ if __name__ == "__main__":
         contracts = db.getColumn("contracts", "address, byteCode")
 
     linksFound: int = 0
-    
+
     loop: tqdm = tqdm(
         enumerate(contracts),
         desc=f"Links found: {linksFound}",
         total=len(contracts)
     )
-    
+    graphGen = GraphGen()
     for i, (addr, byteCode) in loop:
         cont = Contract([], addr, 'noTags', byteCode=byteCode)
         graphGen.findLinks(cont)
         linksFound += len(cont.links)
-        
-        
+
         loop.set_description(f"Links: {linksFound}, Interconectivity: {linksFound/(i+1):.2f}")
-        
+

@@ -49,7 +49,10 @@ class WebScraper:
                 leave=False,
             ):
                 if not db.inColumn("contracts", "address", cont.address):
-                    code = EthGetCode.getCode(cont.address, i)
+                    # code = EthGetCode.getCode(cont.address, i)
+                    code = EthGetCode.callEvmApi(
+                        cont.address,
+                        "eth_getCode")
                     contracts[i].addByteCode(code)
 
         return contracts
@@ -134,8 +137,12 @@ class WebScraper:
         contracts = self.getAddrsFromUltrasound()
         contracts = self.getByteCode(contracts)
 
-        contracts = self.tagsFromEtherscan(contracts)
-        self.addContractsToDB(contracts)
+        contracts = self.tagsFromEtherscan(contracts, maxDuration=3)
+        self.addContractsToDB(
+            contracts,
+            writeTags=True,
+            writeCode=True
+        )
 
     def fullTagUpdate(self):
         with self.db() as db:
@@ -151,7 +158,7 @@ class WebScraper:
 
         contracts = self.tagsFromEtherscan(contracts, maxDuration=3)
         self.addContractsToDB(contracts, writeTags=True)
-        print(f"{len(contracts)} tags added to database")
+        print(f"{len(contracts)} contracts tags added to database")
         
     def reaplceByteCodeWithRaw(self):
         with self.db() as db:
@@ -170,6 +177,6 @@ class WebScraper:
 
 if __name__ == "__main__":
     scraper = WebScraper()
-    scraper.fullTagUpdate()
+    # scraper.fullTagUpdate()
     # scraper.reaplceByteCodeWithRaw()
     scraper()
