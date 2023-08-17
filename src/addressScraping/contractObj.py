@@ -3,11 +3,12 @@ import evmdasm
 
 
 class Contract:
-    byteCode: evmdasm.EvmInstructions | str | None = None
+    byteCode: evmdasm.EvmInstructions | str
     address: str
     group: str
     description: str
     tags: set[str]
+    links: set[str] = set()
 
     def __init__(
         self,
@@ -19,7 +20,7 @@ class Contract:
         if not isinstance(addr, str):
             raise TypeError(f"Invalid link type\n{addr = }")
 
-        if isinstance(byteCode, evmdasm.EvmInstructions):
+        if byteCode is not None:
             self.byteCode = byteCode
 
         if addr.startswith("https://etherscan.io/address/"):
@@ -73,10 +74,8 @@ class Contract:
         self.byteCode = byteCode
         
     def dissassemble(self) -> evmdasm.EvmInstructions:
-        if not isinstance(self.byteCode, evmdasm.EvmInstructions):
-            raise TypeError(
-                f"Invalid type for byteCode\n{self.byteCode = }"
-            )
+        if not isinstance(self.byteCode, str):
+            return self.byteCode
         evmCode = evmdasm.EvmBytecode(self.byteCode)
         return evmCode.disassemble()
 
@@ -111,3 +110,18 @@ class Contract:
     # returns the tags as an iterator
     def __iter__(self) -> Iterator[str]:
         return self.tags.__iter__()
+
+    def addLinks(self, links: set[str]) -> None:
+        links = set(
+            filter(lambda x: len(x) == 40, links)
+        )
+        
+        if self.links:
+            self.links = self.links | links
+        else:
+            self.links = links
+        
+    def addLink(self, links: str) -> None:
+        if len(links) != 40:
+            return
+        self.links.add(links)

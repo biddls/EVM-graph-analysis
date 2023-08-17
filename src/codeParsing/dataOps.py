@@ -14,17 +14,17 @@ import requests
 import evmdasm
 import os
 from dotenv import load_dotenv
-# import logging
+import logging
 from itertools import chain
 from addressScraping.contractObj import Contract
 from typing import Tuple, Union
 
 load_dotenv()
 
-# logging.basicConfig(
-#     level=logging.CRITICAL,
-#     format=f"%(asctime)s %(levelname)s %(message)s",
-# )
+logging.basicConfig(
+    level=logging.CRITICAL,
+    #format=f"%(asctime)s %(levelname)s %(message)s",
+)
 
 
 class EthGetCode:
