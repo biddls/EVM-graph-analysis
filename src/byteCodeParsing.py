@@ -28,11 +28,7 @@ class GraphGen:
         for op in byteCode:
             if len(op.operand) != 40:
                 pass
-            elif op.operand == 'ffffffffffffffffffffffffffffffffffffffff':
-                pass
-            elif op.operand == 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee':
-                pass
-            elif op.operand == '0000000000000000000000000000000000000000':
+            elif len(set(op.operand)) == 1:
                 pass
             elif self.checkAddrForValidity(op.operand):
                 links.add(op.operand)
@@ -51,8 +47,11 @@ class GraphGen:
         Returns:
             bool: True if valid, False otherwise
         """
-        # TODO: check if address has any bytecode
+        # checks if address has any bytecode
         if self.db.inColumn("contracts", "address", addr):
+            self.db.getElem(
+                
+            )
             # TODO: get bytecode and process it
             return True
         # TODO: check if address has any transactions

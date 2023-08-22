@@ -4,21 +4,17 @@
   "editor.defaultFormatter": "ms-python.black-formatter",
   "editor.formatOnSave": true,
   "files.autoSave": "onFocusChange",
-  "[jsonc]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.rulers": [79]
   },
-  "black-formatter.args": ["--line-length 80"],
-  "sqltools.useNodeRuntime": true,
-  "sqltools.connections": [
-    {
-      "previewLimit": 50,
-      "driver": "SQLite",
-      "name": "contracts",
-      "database": "${workspaceFolder:EVM project}/contStore.db"
-    }
-  ]
+  // "black-formatter.args": ["--line-length 80"],
+  // "sqltools.useNodeRuntime": true,
+  // "sqltools.connections": [
+  //   {
+  //     "previewLimit": 50,
+  //     "driver": "SQLite",
+  //     "name": "contracts",
+  //     "database": "${workspaceFolder:EVM project}/contStore.db"
+  //   }
+  // ]
 }

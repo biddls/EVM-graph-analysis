@@ -130,14 +130,14 @@ class ByteCodeIO:
     def __init__(
         self,
         dbPath: str = "contStore.db"
-        ):
+    ):
         self.sqliteConnection = sqlite3.connect("contStore.db")
         self.cursor = self.sqliteConnection.cursor()
         # logging.info("Connected to SQLite")
 
     def __enter__(
         self
-        ):
+    ):
         return self
 
     def writeContract(
@@ -145,7 +145,7 @@ class ByteCodeIO:
         cont: Contract,
         noForce: bool = False,
         **kwargs
-        ) -> int:
+    ) -> int:
         if noForce:
             command: str = "INSERT"
         else:
@@ -186,7 +186,7 @@ class ByteCodeIO:
                 list[str],
                 set[str]
             ]
-        ) -> int:
+    ) -> int:
         if len(tags) == 0:
             return 0
 
@@ -225,6 +225,7 @@ class ByteCodeIO:
         self,
         name: str | list[str]
     ) -> bool | list[str]:
+
         if isinstance(name, str):
             sqlite_select_query = """SELECT * from contracts where name = ?"""
             self.cursor.execute(sqlite_select_query, (name,))
@@ -258,6 +259,21 @@ class ByteCodeIO:
         column: str
     ) -> list[str]:
         sqlite_select_query = f"""SELECT {str(column)} from {str(table)}"""
+        self.cursor.execute(sqlite_select_query)
+        records = self.cursor.fetchall()
+        return records
+
+    def getElem(
+        self,
+        table: str,
+        column: str,
+        where: str,
+        equals: str
+    ) -> Any:
+        sqlite_select_query = f"""
+        SELECT {str(column)}
+        from {str(table)}
+        where {str(where)} = {str(equals)}"""
         self.cursor.execute(sqlite_select_query)
         records = self.cursor.fetchall()
         return records
