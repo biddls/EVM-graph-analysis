@@ -2,7 +2,7 @@
 Reads in a csv of addresses and names, and then looks up the bytecode of each address.
 """
 
-from addrLookup import EthGetCode, ByteCodeIO
+from dataOps import EthGetCode, ByteCodeIO
 import pandas as pd
 import logging
 from tqdm import tqdm

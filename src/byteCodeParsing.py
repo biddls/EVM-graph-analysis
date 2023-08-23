@@ -49,9 +49,11 @@ class GraphGen:
         """
         # checks if address has any bytecode
         if self.db.inColumn("contracts", "address", addr):
+            # add recursion here
             self.db.getElem(
                 
             )
+
             # TODO: get bytecode and process it
             return True
         # TODO: check if address has any transactions

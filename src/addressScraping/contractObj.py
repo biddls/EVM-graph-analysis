@@ -1,4 +1,4 @@
-from typing import Iterator, Self, Union, Literal
+from typing import Iterator, Self, Union, Literal, Tuple
 import evmdasm
 
 
@@ -7,7 +7,7 @@ class Contract:
     address: str
     group: str
     description: str
-    tags: set[str]
+    tags: set[Tuple[str, str]]
     links: set[str] = set()
 
     def __init__(
@@ -36,43 +36,39 @@ class Contract:
                         f"""{list.__name__} for case: {source}\n{text = }"""
                     )
                 if len(text) == 4:
-                    self.tags = {*text[:3]}
-                    
-                    self.tags = set(
-                        filter(lambda x: x != "", self.tags)
-                    )
-                    
-                    self.tags = set(
-                        filter(lambda x: "..." not in x, self.tags)
-                    )
-                    
+                    self.tags = {*zip(text[:3], ["ultrasound"] * 3)}
+
+                    self.tags = set(filter(lambda x: x[0] != "", self.tags))
+
+                    self.tags = set(filter(lambda x: "..." not in x[0], self.tags))
+
                 elif len(text) == 3:
                     if "..." in text[0]:
                         self.tags = set()
                     else:
-                        self.tags = {text[0]}
+                        self.tags = {(text[0], "ultrasound")}
                 else:
                     raise Exception(
-                        f"""Invalid contract tag format:"""\
+                        f"""Invalid contract tag format:"""
                         f"""\n{len(text) = } \n{text = }"""
                     )
             case "etherscanTags":
                 if not isinstance(text, set):
                     raise TypeError(
-                        f"""Invalid type for text\ntext should be a """\
+                        f"""Invalid type for text\ntext should be a """
                         f"""{set.__name__} for case: {source}\n{text = }"""
                     )
-                self.tags = {*text}
+                self.tags = {*zip(text, ["etherscanTags"] * len(text))}
             case "noTags":
                 self.tags = set()
             case "forceSet":
-                self.tags = {*text}
+                self.tags = {*zip(text, ["forceSet"] * len(text))}
             case _:
                 raise Exception(f"Invalid source: {source}")
 
     def addByteCode(self, byteCode: evmdasm.EvmInstructions | str) -> None:
         self.byteCode = byteCode
-        
+
     def dissassemble(self) -> evmdasm.EvmInstructions:
         if isinstance(self.byteCode, evmdasm.EvmInstructions):
             return self.byteCode
@@ -108,19 +104,19 @@ class Contract:
         return len(self.tags)
 
     # returns the tags as an iterator
-    def __iter__(self) -> Iterator[str]:
+    def __iter__(self) -> Iterator[Tuple[str, str]]:
         return self.tags.__iter__()
+    
+    def __hash__(self) -> int:
+        return int(self.address, 16)
 
     def addLinks(self, links: set[str]) -> None:
-        links = set(
-            filter(lambda x: len(x) == 40, links)
-        )
-        
+        links = set(filter(lambda x: len(x) == 40, links))
         if self.links:
             self.links = self.links | links
         else:
             self.links = links
-        
+
     def addLink(self, links: str) -> None:
         if len(links) != 40:
             return

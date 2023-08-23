@@ -3,10 +3,10 @@ python-dotenv
 pandas
 evmdasm
 tqdm
-tinydb
 selenium
 webdriver_manager
 beautifulsoup4
 lxml
 json-lines
 undetected-chromedriver
+webdriver-manager

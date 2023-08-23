@@ -5,6 +5,8 @@ import bs4 as bs
 import undetected_chromedriver as uc
 import time
 from addressScraping.contractObj import Contract
+from webdriver_manager.chrome import ChromeDriverManager
+
 
 
 def suppress_exception_in_del(uc):
@@ -24,9 +26,10 @@ suppress_exception_in_del(uc)
 
 class TagGetter:
     def __init__(self):
+        # uc.Chrome(driver_executable_path=ChromeDriverManager().install(), options=options)
         options = uc.ChromeOptions()
         options.add_argument("--headless")  # type: ignore
-        self.driver = uc.Chrome(options=options)
+        self.driver = uc.Chrome(driver_executable_path=".\\src\\chromedriver.exe", options=options)
 
     def getTags(self, addr: str, site: str = "etherscan", maxDuration: float = 5) -> Contract:
         if not addr.startswith("0x"):

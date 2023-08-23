@@ -7,6 +7,14 @@
   "[python]": {
     "editor.rulers": [79]
   },
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "driver": "SQLite",
+      "name": "contracts",
+      "database": "${workspaceFolder:EVM project}/contStore.db"
+    }
+  ],
   // "black-formatter.args": ["--line-length 80"],
   // "sqltools.useNodeRuntime": true,
   // "sqltools.connections": [
