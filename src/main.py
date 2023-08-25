@@ -8,7 +8,7 @@ from typing import Any
 from addressScraping.contractObj import Contract
 from addressScraping import usMoney
 from addressScraping.contTagScraping import TagGetter
-from codeParsing.dataOps import EthGetCode, ByteCodeIO
+from dataOps import EthGetCode, ByteCodeIO
 from tqdm import tqdm
 from itertools import chain
 

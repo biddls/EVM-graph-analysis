@@ -10,3 +10,4 @@ lxml
 json-lines
 undetected-chromedriver
 webdriver-manager
+slither-analyzer

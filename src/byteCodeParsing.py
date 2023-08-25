@@ -1,5 +1,5 @@
 from typing import Any
-from codeParsing.dataOps import ByteCodeIO
+from dataOps import ByteCodeIO
 from addressScraping.contractObj import Contract
 from tqdm import tqdm
 import logging
@@ -50,9 +50,9 @@ class GraphGen:
         # checks if address has any bytecode
         if self.db.inColumn("contracts", "address", addr):
             # add recursion here
-            self.db.getElem(
+            # self.db.getElem(
                 
-            )
+            # )
 
             # TODO: get bytecode and process it
             return True
