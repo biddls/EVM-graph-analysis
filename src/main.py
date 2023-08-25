@@ -11,6 +11,7 @@ from addressScraping.contTagScraping import TagGetter
 from dataOps import EthGetCode, ByteCodeIO
 from tqdm import tqdm
 from itertools import chain
+from addressScraping.readFromCSV import Reader
 
 
 class WebScraper:
@@ -159,21 +160,24 @@ class WebScraper:
         contracts = self.tagsFromEtherscan(contracts, maxDuration=3)
         self.addContractsToDB(contracts, writeTags=True)
         print(f"{len(contracts)} contracts tags added to database")
-        
+    
     def reaplceByteCodeWithRaw(self):
+        raise Exception ("This code is only meant to be run once")
         with self.db() as db:
-            result = db.getColumn("contracts", "address, name")
+            result = db.getColumn("contracts", "address")
         
         conts: list[Contract] = [
             Contract([name], addr, "forceSet")
-            for addr, name in result
+            for addr in result
         ]
         
         print(f"{len(conts)} contracts found")
         conts = self.getByteCode(conts)
         self.addContractsToDB(conts, writeCode=True, noForce=False)
 
-
+    def runCSV_scipt(self):
+        raise Exception ("Incomplete function")
+        cons = Reader.main()
 
 if __name__ == "__main__":
     scraper = WebScraper()

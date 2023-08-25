@@ -134,11 +134,10 @@ class ByteCodeIO:
         else:
             command: str = "INSERT OR REPLACE"
         sqlite_insert_query = f"""{command} INTO contracts
-                            (address, name, bytecode) 
-                            VALUES (?, ?, ?);"""
-        record: tuple[str, str, str] = (
+                            (address, bytecode) 
+                            VALUES (?, ?);"""
+        record: tuple[str, str] = (
             cont.address,
-            kwargs.get("Name", ""),
             str(cont.byteCode),
         )
 
@@ -204,24 +203,7 @@ class ByteCodeIO:
             # logging.critical("Failed to insert records into sqlite table\n", error)
             raise (error)
 
-    def inNames(self, name: str | list[str]) -> bool | list[str]:
-        if isinstance(name, str):
-            sqlite_select_query = """SELECT * from contracts where name = ?"""
-            self.cursor.execute(sqlite_select_query, (name,))
-            records = self.cursor.fetchall()
-            return len(records) > 0
-        if isinstance(name, list):
-            sqlite_select_query = """SELECT name from contracts"""
-            self.cursor.execute(sqlite_select_query)
-            records = self.cursor.fetchall()
-            records = list(chain.from_iterable(records))
-            # find all values in name that are not in records
-            return [n for n in name if n not in records]
-
     def inColumn(self, table: str, column: str, value: str) -> bool:
-        if not isinstance(value, str):  # or isinstance(value, list)):
-            raise Exception("name must be of type str")
-
         sqlite_select_query = f"""SELECT * from {table} where {column} = ?"""
         self.cursor.execute(sqlite_select_query, (value,))
         records = self.cursor.fetchall()
