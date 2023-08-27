@@ -7,3 +7,4 @@ venv
 *.html
 /docs/
 *.exe
+/data/

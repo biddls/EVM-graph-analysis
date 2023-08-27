@@ -209,7 +209,7 @@ class ByteCodeIO:
         records = self.cursor.fetchall()
         return len(records) > 0
 
-    def getColumn(self, table: str, column: str) -> list[str]:
+    def getColumn(self, table: str, column: str) -> list[str] | list[Any]:
         sqlite_select_query = f"""SELECT {str(column)} from {str(table)}"""
         self.cursor.execute(sqlite_select_query)
         records = self.cursor.fetchall()
@@ -240,7 +240,7 @@ if __name__ == "__main__":
     # ByteCodeIO.writeCode(addr, code)
 
 """
-(.venv) PS C:\Users\Biddls\OneDrive\HOPE\Brazil\EVM project> python .\src\main.py
+(.venv) PS C:\\Users\\Biddls\\OneDrive\\HOPE\\Brazil\\EVM project> python .\\src\\main.py
 WARNING:uc:could not detect version_main.therefore, we are assuming it is chrome 108 or higher
 Starting run 0
 
