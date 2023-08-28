@@ -18,6 +18,7 @@ import logging
 from itertools import chain
 from addressScraping.contractObj import Contract
 from typing import Any, Literal, Tuple, Union
+import pandas as pd
 
 load_dotenv()
 
@@ -231,6 +232,29 @@ class ByteCodeIO:
         if self.sqliteConnection:
             self.sqliteConnection.close()
             # logging.info("The SQLite connection is closed")
+
+
+class opCodeLookup:
+    opCodeTable = pd.read_excel("docs\\oppcodes.xlsx", usecols=['Stack', 'Name'])
+    opCodeTable['Stack'] = opCodeTable['Stack'].apply(str)
+    opCodeTable['Stack'] = opCodeTable['Stack'].apply(int, base=16)
+    opCodeTable.rename(
+        columns={
+            'Stack': 'OpCode',
+            'Name': 'Name'
+        },
+        inplace=True,
+        errors='raise'
+    )
+    opCodeDict: dict[int, str] = {int(k): str(v) for i, (k, v) in opCodeTable.iterrows()}
+    del opCodeTable
+
+    @staticmethod
+    def convertOpCode(opCode: int) -> str:
+        # code = str(opCodeLookup.opCodeTable.loc[opCode, 'Name'])
+        code = opCodeLookup.opCodeDict[opCode]
+        # print(f"{opCode} = {code}")
+        return code
 
 
 if __name__ == "__main__":

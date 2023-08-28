@@ -1,11 +1,9 @@
-from dataOps import ByteCodeIO
-from addressScraping.contractObj import Contract
+from dataOps import ByteCodeIO, opCodeLookup
 from tqdm import tqdm
 import evmdasm
 import os
 import collections
 from matplotlib import pyplot as plt
-from math import ceil
 
 
 def getOpCodes(byteCodes: list[str]) -> list[list[int]]:
@@ -49,6 +47,16 @@ def recursiveNgramGen(contList: list[list[int]]) -> dict[tuple[int], int]:
     return ngrams
 
 def getStats(_conts, p=True):
+    # temp = _conts[0]
+    # codes = []
+    # for code in temp:
+    #     try:
+    #         codes.append(opCodeLookup.convertOpCode(code))
+    #     except KeyError:
+    #         pass
+    # print(f'|{"|".join(codes)}|')
+    # print(f"{len(codes) = }, {len(temp) = }")
+    exit(0)
     lenConts = len(_conts)
     minLength = len(min(_conts, key=lambda x: len(x)))
     maxLength = len(max(_conts, key=lambda x: len(x)))
@@ -68,24 +76,29 @@ def getStats(_conts, p=True):
     print(f"{lenContsFlat = }")
     print(f"{averageLength * lenConts = }")
 
-    filteredOpCodeFreq = {k: v/lenContsFlat for k, v in opCodeFreq.items() if v/lenContsFlat > 0.02}
+    # removes the long tail of opCodes that are used very infrequently
+    cutOff = 0.02
+    filteredOpCodeFreq = {
+        k: v/lenContsFlat
+        for k, v in opCodeFreq.items()
+        if v/lenContsFlat > cutOff}
+    
     names = list(filteredOpCodeFreq.keys())
+    # print(names)
+    names = [opCodeLookup.convertOpCode(x) for x in names]
+    # print(names)
     values = list(filteredOpCodeFreq.values())
-
+    print(f"At {cutOff = } The toal proportion left is:{round(sum(values), 3) = }")
+    print(f"This is captured by only {len(names)} opCodes")
+    
+    return
+    
     _, ax = plt.subplots(1)
     ax.bar(range(len(filteredOpCodeFreq)), values, tick_label=names)
-    plt.title("opCode requency, over all contracts parsed")
+    plt.title(f"opCode porpotion use, for all contracts, this data shows the top {round(sum(values)*100)}% by opCode use")
     plt.xlabel("opCode")
-    plt.ylabel("frequeuncy of opCode")
+    plt.ylabel("prorortion of opCodes")
     ax.set_ylim(0, max(filteredOpCodeFreq.values()) * 1.1)
-    print(max(filteredOpCodeFreq.values()))
-    ax.axes.xaxis.set_ticklabels([])
-    plt.tick_params(
-        axis='x',
-        which='both',
-        bottom=False,
-        top=False,
-        labelbottom=False)
     plt.show()
 
     plt.hist(lengths, bins=20)
@@ -94,10 +107,14 @@ def getStats(_conts, p=True):
     plt.ylabel("frequency")
     plt.show()
 
+
 if __name__ == "__main__":
+    # print(opCodeLookup.convertOpCode(0))
+    # print(opCodeLookup.opCodeTable)
+    # exit(0)
     if os.path.exists("data\\opCodes.txt"):
         with open("data\\opCodes.txt", "r") as f:
-            conts = list(map(eval, tqdm(f.readlines())))
+            conts = list(map(eval, tqdm(f.readlines()[:10])))
         print("")
     else:
         with ByteCodeIO() as db:
