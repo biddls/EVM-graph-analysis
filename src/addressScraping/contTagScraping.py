@@ -5,6 +5,7 @@ import bs4 as bs
 import undetected_chromedriver as uc
 import time
 from addressScraping.contractObj import Contract
+from dataOps import ByteCodeIO
 
 
 def suppress_exception_in_del(uc):
@@ -32,15 +33,14 @@ class TagGetter:
         )
 
     def getTags(
-        self, addr: str, site: str = "etherscan", maxDuration: float = 5
+        self, addr: str, site: str = "Etherscan", maxDuration: float = 5
     ) -> Contract:
         if not addr.startswith("0x"):
             raise Exception(f"Invalid address format:\n{addr = }")
         if len(addr) != 42:
             raise Exception(f"Invalid address length should be 42:\n{addr = }")
-
         match site:
-            case "etherscan":
+            case "Etherscan":
                 address = self.etherScanGetter(addr, maxDuration, "address")
                 token = self.etherScanGetter(addr, maxDuration, "token")
                 return address + token

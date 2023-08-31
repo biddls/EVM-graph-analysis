@@ -1,12 +1,12 @@
 """
-This checks N sources for address and or tags and staored
+This checks N sources for address and or tags and stored
 the data in an SQL database
 """
 
 from time import sleep, time
 from typing import Any
 from addressScraping.contractObj import Contract
-from addressScraping import usMoney
+from addressScraping.usMoney import usMoneyScraper
 from addressScraping.contTagScraping import TagGetter
 from dataOps import EthGetCode, ByteCodeIO
 from tqdm import tqdm
@@ -28,11 +28,15 @@ class WebScraper:
         Returns:
             list[Contract]: List of contract objects
         """
-        contracts = usMoney.getAddresses()
+        contracts = usMoneyScraper.getAddresses()
         # print(f"{len(contracts)} contracts found from ultrasound.money")
         return contracts
 
-    def getByteCode(self, contracts: list[Contract]) -> list[Contract]:
+    def getByteCode(
+            self,
+            contracts: list[Contract],
+            progBar = True
+            ) -> list[Contract]:
         """
         This function finds and attaches the bytecode to the contracts
 
@@ -43,26 +47,35 @@ class WebScraper:
             list[Contract]: List of contract objects
         """
         with self.db() as db:
-            for i, cont in tqdm(
+            contracts = list(
+                filter(
+                    lambda x: not db.inColumn("contracts", "address", x.address),
+                    contracts
+                )
+            )
+        if progBar:
+            itter = tqdm(
                 enumerate(contracts),
                 desc="Getting ByteCode",
                 total=len(contracts),
                 leave=False,
-            ):
-                if not db.inColumn("contracts", "address", cont.address):
-                    # code = EthGetCode.getCode(cont.address, i)
-                    code = EthGetCode.callEvmApi(
-                        cont.address,
-                        "eth_getCode")
-                    contracts[i].addByteCode(code)
+            )
+        else:
+            itter = enumerate(contracts)
+        for i, cont in itter:
+            code = EthGetCode.callEvmApi(
+                cont.address,
+                "eth_getCode")
+            contracts[i].addByteCode(code)
 
         return contracts
 
     def tagsFromEtherscan(
         self,
         contracts: list[Contract],
-        site: str = "etherscan",
-        maxDuration: float = 5
+        site: str = "Etherscan",
+        maxDuration: float = 5,
+        progBar = True,
     ) -> list[Contract]:
         """
         This function gets the tags from etherscan.io
@@ -73,10 +86,27 @@ class WebScraper:
         Returns:
             list[Contract]: List of contract objects
         """
+        with self.db() as db:
+            addrsAndTags = db.getColumn("addressTags", "address, source")
+        addrsAndTags = {k: v for k, v in addrsAndTags if v is not site}
+        addrsAndTags = set(addrsAndTags.keys())
+        # print(addrsAndTags)
+        # print(f"{len(contracts)} contracts before filtering")
+        contracts = list(
+            filter(
+                lambda x: x.address not in addrsAndTags,
+                contracts
+            )
+        )
+        # print(f"{len(contracts)} contracts after filtering")
+        if progBar:
+            itter = tqdm(contracts, desc="Getting Tags", leave=False)
+        else:
+            itter = contracts
         contracts = list(
             map(
                 lambda x: x + self.tagGetter.getTags(x.address, site, maxDuration),
-                tqdm(contracts, desc="Getting Tags", leave=False),
+                itter,
             )
         )
         return contracts
@@ -87,6 +117,7 @@ class WebScraper:
         writeTags: bool = False,
         writeCode: bool = False,
         noForce: bool = True,
+        progBar = True,
     ) -> None:
         """
         This function adds the contracts to the database
@@ -100,29 +131,39 @@ class WebScraper:
             )
 
         if writeCode:
+            if progBar:
+                itter = tqdm(contracts, desc="Writing Contracts", leave=False)
+            else:
+                itter = contracts
             contsAdded = 0
             with self.db() as db:
                 # writes to "contracts" sheet
-                for cont in tqdm(contracts, desc="Writing Contracts", leave=False):
+                for cont in itter:
                     contsAdded += db.writeContract(cont, noForce=noForce)
-
-                print(f"{contsAdded} contracts added to database")
+            if not progBar:
+                print(f"\t{contsAdded} contracts added to database")
 
         if writeTags:
+            if progBar:
+                itter = tqdm(contracts, desc="Writing Tags", leave=False)
+            else:
+                itter = contracts
             tagsAdded = 0
             with self.db() as db:
                 # wrties tags to "addressTags" sheet
-                for cont in tqdm(contracts, desc="Writing Tags", leave=False):
+                for cont in itter:
                     tagsAdded += db.writeTags(cont.address, cont.tags)
-
-                print(f"{tagsAdded} tags added to database")
+            if not progBar:
+                print(f"\t{tagsAdded} tags added to database")
 
     def __call__(self, *args: Any, **kwds: Any):
         start = time()
         counter = 0
         while True:
-            print(f"Starting run {counter}")
+            print(f"Starting run: {counter}")
             self.main()
+            counter += 1
+            continue
 
             start += 60 * 5  # 5 mins
             if time() > start:
@@ -132,13 +173,15 @@ class WebScraper:
                 print(f"Sleeping for {dur:.0f} seconds")
                 sleep(dur)
 
-            counter += 1
-
     def main(self):
+        print('\tgetAddrsFromUltrasound')
         contracts = self.getAddrsFromUltrasound()
+        print('\tgetByteCode')
         contracts = self.getByteCode(contracts)
 
+        print('\ttagsFromEtherscan')
         contracts = self.tagsFromEtherscan(contracts, maxDuration=3)
+        print('\taddContractsToDB')
         self.addContractsToDB(
             contracts,
             writeTags=True,
@@ -176,11 +219,29 @@ class WebScraper:
         self.addContractsToDB(conts, writeCode=True, noForce=False)
 
     def runCSV_scipt(self):
-        raise Exception ("Incomplete function")
-        cons = Reader.main()
+        # raise Exception ("Incomplete function")
+        contracts: list[Contract] = list(Reader.main())
+        for cont in tqdm(contracts):
+            contract = list([cont])
+            # print('\tgetByteCode')
+            contract = self.getByteCode(contract, progBar=False)
+            if len(contract) = 0:
+                continue
+            # print('\ttagsFromEtherscan')
+            contract = self.tagsFromEtherscan(contract, maxDuration=3, progBar=False)
+            # print('\taddContractsToDB')
+            if len(contract) = 0:
+                continue
+            self.addContractsToDB(
+                contract,
+                writeTags=True,
+                writeCode=True,
+                progBar=False
+            )
 
 if __name__ == "__main__":
     scraper = WebScraper()
     # scraper.fullTagUpdate()
     # scraper.reaplceByteCodeWithRaw()
-    scraper()
+    scraper.runCSV_scipt()
+    # scraper()

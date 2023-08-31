@@ -19,5 +19,6 @@
   "files.exclude": {
     "**/*__pycache__": true,
     "src/chromedriver.exe": true,
+    ".venv": true,
   }
 }

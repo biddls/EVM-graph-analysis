@@ -1,5 +1,5 @@
 import pandas as pd
-from contractObj import Contract
+from addressScraping.contractObj import Contract
 from tqdm import tqdm
 
 class Reader:
@@ -70,7 +70,7 @@ class Reader:
             {'symbol'},
             progBar = True)
         print(f"{len(erc20s)} ERC20 contracts processed")
-        
+
         # processes NFTs
         path = "data\\nftAddrs.csv"
         print(f"reading {path}")

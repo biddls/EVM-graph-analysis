@@ -10,57 +10,58 @@ import bs4
 from selenium.webdriver.chrome.options import Options
 from addressScraping.contractObj import Contract
 
+class usMoneyScraper:
+    @staticmethod
+    def getAddresses() -> list[Contract]:
+        """
+        This function gets the addresses from ultrasound.money
+        """
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
 
-def getAddresses() -> list[Contract]:
-    """
-    This function gets the addresses from ultrasound.money
-    """
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
+        driver = webdriver.Chrome(options=chrome_options)
+        url = "https://ultrasound.money/"
+        contents = driver.get(url)
 
-    driver = webdriver.Chrome(options=chrome_options)
-    url = "https://ultrasound.money/"
-    contents = driver.get(url)
+        sleep(3)
 
-    sleep(3)
+        buttons = driver.find_elements(By.TAG_NAME, "button")
+        for button in buttons:
+            if button.text == "5m":
+                button.click()
+                break
+        else:
+            # if "break" is not executed
+            raise Exception("Button not found")
 
-    buttons = driver.find_elements(By.TAG_NAME, "button")
-    for button in buttons:
-        if button.text == "5m":
-            button.click()
-            break
-    else:
-        # if "break" is not executed
-        raise Exception("Button not found")
+        sleep(3)
 
-    sleep(3)
+        contents = driver.page_source
+        driver.close()
+        soup = BeautifulSoup(contents, "lxml")
+        soup_links: bs4.element.ResultSet = soup.find_all("a", href=True)
 
-    contents = driver.page_source
-    driver.close()
-    soup = BeautifulSoup(contents, "lxml")
-    soup_links: bs4.element.ResultSet = soup.find_all("a", href=True)
-
-    filteredLinks: set[bs4.element.Tag] = set(
-        filter(
-            lambda x: x["href"].startswith("https://etherscan.io/address/"), soup_links
+        filteredLinks: set[bs4.element.Tag] = set(
+            filter(
+                lambda x: x["href"].startswith("https://etherscan.io/address/"), soup_links
+            )
         )
-    )
 
-    # processed_links: set = set(map(lambda x: x["href"], filteredLinks))
+        # processed_links: set = set(map(lambda x: x["href"], filteredLinks))
 
-    # addrs: set[str | list[str]] = {
-    #     link.split("https://etherscan.io/address/")[-1] for link in processed_links
-    # }
+        # addrs: set[str | list[str]] = {
+        #     link.split("https://etherscan.io/address/")[-1] for link in processed_links
+        # }
 
-    conts: list[Contract] = []
+        conts: list[Contract] = []
 
-    for link in filteredLinks:
-        text = [content.text for content in link.contents]
-        # print(f"{text = }")
-        # print(f"{link['href'] = }")
-        conts.append(Contract(text, link["href"], "ultrasound"))
+        for link in filteredLinks:
+            text = [content.text for content in link.contents]
+            # print(f"{text = }")
+            # print(f"{link['href'] = }")
+            conts.append(Contract(text, link["href"], "ultrasound"))
 
-    return conts
+        return conts
 
 
 if __name__ == "__main__":

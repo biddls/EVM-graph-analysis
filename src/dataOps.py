@@ -36,7 +36,10 @@ class EthGetCode:
         "params": [None, "latest"],
         "method": None,
     }
-    __headers = {"accept": "application/json", "content-type": "application/json"}
+    __headers = {
+        "accept": "application/json",
+        "content-type": "application/json"
+        }
 
     @staticmethod
     def getCode(_addr: str, _id: int, convert: bool = False) -> evmdasm.EvmInstructions:
@@ -77,7 +80,7 @@ class EthGetCode:
         paylode["method"] = method
         paylode["id"] = _id
         paylode["params"][0] = param
-
+        
         response = requests.post(
             EthGetCode.__url, json=paylode, headers=EthGetCode.__headers
         )
@@ -196,7 +199,7 @@ class ByteCodeIO:
         try:
             self.cursor.executemany(sqlite_insert_query, record)
             self.sqliteConnection.commit()
-            print(f"taggs addes are {tags}")
+            # print(f"taggs addes are {tags}")
             return len(tags)
         except sqlite3.OperationalError as e:
             raise e
