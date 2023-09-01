@@ -140,7 +140,7 @@ class WebScraper:
                 # writes to "contracts" sheet
                 for cont in itter:
                     contsAdded += db.writeContract(cont, noForce=noForce)
-            if not progBar:
+            if progBar:
                 print(f"\t{contsAdded} contracts added to database")
 
         if writeTags:
@@ -153,7 +153,7 @@ class WebScraper:
                 # wrties tags to "addressTags" sheet
                 for cont in itter:
                     tagsAdded += db.writeTags(cont.address, cont.tags)
-            if not progBar:
+            if progBar:
                 print(f"\t{tagsAdded} tags added to database")
 
     def __call__(self, *args: Any, **kwds: Any):
@@ -225,12 +225,12 @@ class WebScraper:
             contract = list([cont])
             # print('\tgetByteCode')
             contract = self.getByteCode(contract, progBar=False)
-            if len(contract) = 0:
+            if len(contract) == 0:
                 continue
             # print('\ttagsFromEtherscan')
             contract = self.tagsFromEtherscan(contract, maxDuration=3, progBar=False)
             # print('\taddContractsToDB')
-            if len(contract) = 0:
+            if len(contract) == 0:
                 continue
             self.addContractsToDB(
                 contract,

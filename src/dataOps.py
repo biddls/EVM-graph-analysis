@@ -80,10 +80,12 @@ class EthGetCode:
         paylode["method"] = method
         paylode["id"] = _id
         paylode["params"][0] = param
-        
-        response = requests.post(
-            EthGetCode.__url, json=paylode, headers=EthGetCode.__headers
-        )
+        try:
+            response = requests.post(
+                EthGetCode.__url, json=paylode, headers=EthGetCode.__headers
+            )
+        except requests.exceptions.ConnectionError:
+            return None
 
         if response.status_code != 200:
             error = json.loads(response.text)["error"]
