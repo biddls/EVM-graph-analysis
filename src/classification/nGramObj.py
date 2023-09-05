@@ -53,6 +53,9 @@ class nGramObj:
     def __len__(self) -> int:
         return len(self.nGram)
 
+    def __repr__(self) -> str:
+        return f"nGramObj({self.nGram}, {self.count})"
+
     # def __add__(self, __value: Self) -> Self:
     #     if self != __value:
     #         raise ValueError("nGrams must be the same to be added")
@@ -87,6 +90,7 @@ class nGramObj:
                 0,
                 corpus,
                 opCodeList,
+                runOnCorpus=True,
                 genChildren=True,
             )
 
@@ -95,6 +99,7 @@ class nGramObj:
                 0,
                 corpus,
                 opCodeList,
+                runOnCorpus=True,
                 genChildren=True,
             )
 
