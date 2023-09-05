@@ -1,11 +1,11 @@
 {
   // "python.analysis.typeCheckingMode": "strict",
   "python.analysis.typeCheckingMode": "basic",
-  "editor.defaultFormatter": "ms-python.black-formatter",
+  // "editor.defaultFormatter": "ms-python.black-formatter",
   "editor.formatOnSave": true,
   "files.autoSave": "onFocusChange",
   "[python]": {
-    "editor.rulers": [79]
+    "editor.defaultFormatter": "ms-python.black-formatter"
   },
   "sqltools.connections": [
     {
@@ -15,7 +15,7 @@
       "database": "${workspaceFolder:EVM project}/contStore.db"
     }
   ],
-  "black-formatter.args": ["--line-length 80"],
+  // "black-formatter.args": ["--line-length 80"],
   "files.exclude": {
     "**/*__pycache__": true,
     "src/chromedriver.exe": true,

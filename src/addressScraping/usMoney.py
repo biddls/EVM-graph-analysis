@@ -10,6 +10,7 @@ import bs4
 from selenium.webdriver.chrome.options import Options
 from addressScraping.contractObj import Contract
 
+
 class usMoneyScraper:
     @staticmethod
     def getAddresses() -> list[Contract]:
@@ -43,7 +44,8 @@ class usMoneyScraper:
 
         filteredLinks: set[bs4.element.Tag] = set(
             filter(
-                lambda x: x["href"].startswith("https://etherscan.io/address/"), soup_links
+                lambda x: x["href"].startswith("https://etherscan.io/address/"),
+                soup_links,
             )
         )
 
@@ -66,7 +68,7 @@ class usMoneyScraper:
 
 if __name__ == "__main__":
     print("This is a module, not a script")
-    conts = getAddresses()
+    conts = usMoneyScraper.getAddresses()
     print(len(conts))
     for cont in conts[:5]:
         print(cont)

@@ -8,3 +8,4 @@ venv
 /docs/
 *.exe
 /data/
+*.txt
