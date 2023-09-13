@@ -14,3 +14,4 @@ slither-analyzer
 matplotlib
 openpyxl
 sortedcontainers
+networkx

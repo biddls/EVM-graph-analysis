@@ -35,7 +35,7 @@ class nGramGen:
                     f.write(str(cont) + "\n")
 
         conts = list(filter(lambda x: len(x) != 0, conts))
-        best = getDiffers(conts, dims=10, n_clusters=50)
+        best = getDiffers(conts, dims=15, n_clusters=500)
         conts = list(map(lambda x: conts[x], best))
 
         # all the data
@@ -85,15 +85,19 @@ class nGramGen:
         self.cull(self.maxCount)
         print("nGrams generated")
 
-    def loadFromCache(self) -> None:
+    def loadFromCache(self, forceEval=False) -> None:
         with open("nGrams.txt", "r") as f:
             temp: list[tuple[tuple[int, ...], int]] = list(map(eval, f.readlines()))
         self.nGrams += list(
             map(
                 lambda nGram: nGramObj(
-                    *nGram, self.corpus, self.opCodes, genChildren=True
+                    *nGram,
+                    self.corpus,
+                    self.opCodes,
+                    runOnCorpus=forceEval,
+                    genChildren=True,
                 ),
-                temp,
+                tqdm(temp, desc="loading cached nGrams"),
             )
         )
         print(f"{len(self.nGrams)} nGrams loaded from file")
@@ -108,7 +112,7 @@ class nGramGen:
         )
         print(f"{len(self.done_nGrams)} processed nGrams loaded from file")
 
-    def genBetter_nGrams(self, batchSize: int = 10) -> None:
+    def genBetter_nGrams(self, batchSize: int = 1) -> None:
         itters = len(self.nGrams)
         itter = tqdm(initial=itters)
         try:
@@ -126,18 +130,19 @@ class nGramGen:
 
                 itter.update(batchSize)
                 itters += batchSize
-                if len(self.nGrams) > self.maxCount * 1.5:
-                    self.cull(self.finalCount)
-                    av = round(
-                        sum([nGram.heruistic() for nGram in self.nGrams])
-                        / len(self.nGrams),
-                        2,
+                if len(self.nGrams) > self.maxCount * 1.1:
+                    self.cull(self.maxCount)
+                av = round(
+                    sum(
+                        [nGram.heruistic() for nGram in self.nGrams if nGram.count != 0]
                     )
-                    best = _max.heruistic()
-                    longest = len(max(self.nGrams, key=lambda nGram: len(nGram.nGram)))
-                    itter.set_description_str(
-                        f"{av = } | {best = } | maxLen = {longest}"
-                    )
+                    / len(self.nGrams),
+                    2,
+                )
+                top = _max.heruistic()
+                maxLen = len(max(self.nGrams, key=lambda nGram: len(nGram.nGram)))
+                _len = len(self.nGrams)
+                itter.set_description_str(f"{av=}|{top=}|{maxLen=}|len={_len}")
         except KeyboardInterrupt:
             itter.close()
             self.cull(self.maxCount)
