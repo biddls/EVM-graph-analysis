@@ -36,10 +36,7 @@ class EthGetCode:
         "params": [None, "latest"],
         "method": None,
     }
-    __headers = {
-        "accept": "application/json",
-        "content-type": "application/json"
-        }
+    __headers = {"accept": "application/json", "content-type": "application/json"}
 
     @staticmethod
     def getCode(_addr: str, _id: int, convert: bool = False) -> evmdasm.EvmInstructions:
@@ -172,7 +169,9 @@ class ByteCodeIO:
             return 0
 
         # check for existing tags
-        sqlite_select_query = """SELECT tag, source from addressTags where address = ?"""
+        sqlite_select_query = (
+            """SELECT tag, source from addressTags where address = ?"""
+        )
         self.cursor.execute(sqlite_select_query, (_addr,))
         records = self.cursor.fetchall()
 
@@ -240,18 +239,15 @@ class ByteCodeIO:
 
 
 class opCodeLookup:
-    opCodeTable = pd.read_excel("docs\\oppcodes.xlsx", usecols=['Stack', 'Name'])
-    opCodeTable['Stack'] = opCodeTable['Stack'].apply(str)
-    opCodeTable['Stack'] = opCodeTable['Stack'].apply(int, base=16)
+    opCodeTable = pd.read_excel("docs/oppcodes.xlsx", usecols=["Stack", "Name"])
+    opCodeTable["Stack"] = opCodeTable["Stack"].apply(str)
+    opCodeTable["Stack"] = opCodeTable["Stack"].apply(int, base=16)
     opCodeTable.rename(
-        columns={
-            'Stack': 'OpCode',
-            'Name': 'Name'
-        },
-        inplace=True,
-        errors='raise'
+        columns={"Stack": "OpCode", "Name": "Name"}, inplace=True, errors="raise"
     )
-    opCodeDict: dict[int, str] = {int(k): str(v) for i, (k, v) in opCodeTable.iterrows()}
+    opCodeDict: dict[int, str] = {
+        int(k): str(v) for i, (k, v) in opCodeTable.iterrows()
+    }
     del opCodeTable
 
     @staticmethod

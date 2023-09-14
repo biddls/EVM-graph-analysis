@@ -1,5 +1,5 @@
 import networkx as nx
-from getStackTrace import StackDecoder
+from classification.getStackTrace import StackDecoder
 from pyvis.network import Network
 
 
@@ -103,9 +103,10 @@ class GraphGen:
         net.show(f"data/STACKS/exploits/total graph.html", notebook=False)
 
 
-graphs = list()
-for name, tx in txs.items():
-    graph = GraphGen(tx, name)
-    graphs.append(graph.G)
+if __name__ == "__main__":
+    graphs = list()
+    for name, tx in txs.items():
+        graph = GraphGen(tx, name)
+        graphs.append(graph.G)
 
-GraphGen(str()).showAll(graphs)
+    GraphGen(str()).showAll(graphs)

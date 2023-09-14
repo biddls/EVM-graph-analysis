@@ -32,11 +32,7 @@ class WebScraper:
         # print(f"{len(contracts)} contracts found from ultrasound.money")
         return contracts
 
-    def getByteCode(
-            self,
-            contracts: list[Contract],
-            progBar = True
-            ) -> list[Contract]:
+    def getByteCode(self, contracts: list[Contract], progBar=True) -> list[Contract]:
         """
         This function finds and attaches the bytecode to the contracts
 
@@ -50,7 +46,7 @@ class WebScraper:
             contracts = list(
                 filter(
                     lambda x: not db.inColumn("contracts", "address", x.address),
-                    contracts
+                    contracts,
                 )
             )
         if progBar:
@@ -63,9 +59,7 @@ class WebScraper:
         else:
             itter = enumerate(contracts)
         for i, cont in itter:
-            code = EthGetCode.callEvmApi(
-                cont.address,
-                "eth_getCode")
+            code = EthGetCode.callEvmApi(cont.address, "eth_getCode")
             contracts[i].addByteCode(code)
 
         return contracts
@@ -75,7 +69,7 @@ class WebScraper:
         contracts: list[Contract],
         site: str = "Etherscan",
         maxDuration: float = 5,
-        progBar = True,
+        progBar=True,
     ) -> list[Contract]:
         """
         This function gets the tags from etherscan.io
@@ -92,12 +86,7 @@ class WebScraper:
         addrsAndTags = set(addrsAndTags.keys())
         # print(addrsAndTags)
         # print(f"{len(contracts)} contracts before filtering")
-        contracts = list(
-            filter(
-                lambda x: x.address not in addrsAndTags,
-                contracts
-            )
-        )
+        contracts = list(filter(lambda x: x.address not in addrsAndTags, contracts))
         # print(f"{len(contracts)} contracts after filtering")
         if progBar:
             itter = tqdm(contracts, desc="Getting Tags", leave=False)
@@ -117,7 +106,7 @@ class WebScraper:
         writeTags: bool = False,
         writeCode: bool = False,
         noForce: bool = True,
-        progBar = True,
+        progBar=True,
     ) -> None:
         """
         This function adds the contracts to the database
@@ -174,19 +163,15 @@ class WebScraper:
                 sleep(dur)
 
     def main(self):
-        print('\tgetAddrsFromUltrasound')
+        print("\tgetAddrsFromUltrasound")
         contracts = self.getAddrsFromUltrasound()
-        print('\tgetByteCode')
+        print("\tgetByteCode")
         contracts = self.getByteCode(contracts)
 
-        print('\ttagsFromEtherscan')
+        print("\ttagsFromEtherscan")
         contracts = self.tagsFromEtherscan(contracts, maxDuration=3)
-        print('\taddContractsToDB')
-        self.addContractsToDB(
-            contracts,
-            writeTags=True,
-            writeCode=True
-        )
+        print("\taddContractsToDB")
+        self.addContractsToDB(contracts, writeTags=True, writeCode=True)
 
     def fullTagUpdate(self):
         with self.db() as db:
@@ -196,24 +181,21 @@ class WebScraper:
 
         contracts: list[Contract] = []
 
-        for addr in tqdm(addrs, desc="Creating Contract Objects",  leave=False):
+        for addr in tqdm(addrs, desc="Creating Contract Objects", leave=False):
             cont = Contract([], addr, "noTags")
             contracts.append(cont)
 
         contracts = self.tagsFromEtherscan(contracts, maxDuration=3)
         self.addContractsToDB(contracts, writeTags=True)
         print(f"{len(contracts)} contracts tags added to database")
-    
+
     def reaplceByteCodeWithRaw(self):
-        raise Exception ("This code is only meant to be run once")
+        raise Exception("This code is only meant to be run once")
         with self.db() as db:
             result = db.getColumn("contracts", "address")
-        
-        conts: list[Contract] = [
-            Contract([name], addr, "forceSet")
-            for addr in result
-        ]
-        
+
+        conts: list[Contract] = [Contract([name], addr, "forceSet") for addr in result]
+
         print(f"{len(conts)} contracts found")
         conts = self.getByteCode(conts)
         self.addContractsToDB(conts, writeCode=True, noForce=False)
@@ -222,22 +204,45 @@ class WebScraper:
         # raise Exception ("Incomplete function")
         contracts: list[Contract] = list(Reader.main())
         for cont in tqdm(contracts):
-            contract = list([cont])
-            # print('\tgetByteCode')
-            contract = self.getByteCode(contract, progBar=False)
-            if len(contract) == 0:
-                continue
-            # print('\ttagsFromEtherscan')
+            self.singleAddr(cont)
+
+    def singleAddr(self, cont: Contract, getTags=True):
+        contract = list([cont])
+        # print('\tgetByteCode')
+        contract = self.getByteCode(contract, progBar=False)
+        if len(contract) == 0:
+            return
+        # print('\ttagsFromEtherscan')
+        if getTags:
             contract = self.tagsFromEtherscan(contract, maxDuration=3, progBar=False)
             # print('\taddContractsToDB')
             if len(contract) == 0:
-                continue
+                return
             self.addContractsToDB(
-                contract,
-                writeTags=True,
-                writeCode=True,
-                progBar=False
+                contract, writeTags=True, writeCode=True, progBar=False
             )
+        else:
+            if len(contract) == 0:
+                return
+            self.addContractsToDB(
+                contract, writeTags=False, writeCode=True, progBar=False
+            )
+        return Contract
+
+    def batch(self, conts: list[Contract], getTags=True):
+        conts = self.getByteCode(conts, progBar=True)
+        if len(conts) == 0:
+            return
+        # print('\ttagsFromEtherscan')
+        if getTags:
+            conts = self.tagsFromEtherscan(conts, maxDuration=3, progBar=True)
+            # print('\taddContractsToDB')
+        if len(conts) == 0:
+            return
+        self.addContractsToDB(conts, writeTags=getTags, writeCode=True, progBar=True)
+
+        return conts
+
 
 if __name__ == "__main__":
     scraper = WebScraper()

@@ -29,7 +29,9 @@ class TagGetter:
         options = uc.ChromeOptions()
         options.add_argument("--headless")  # type: ignore
         self.driver = uc.Chrome(
-            driver_executable_path=".\\src\\chromedriver.exe", options=options
+            # driver_executable_path=".\\src\\chromedriver.exe",
+            driver_executable_path="src/chromedriver",
+            options=options,
         )
 
     def getTags(

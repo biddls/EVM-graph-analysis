@@ -1,7 +1,7 @@
 from typing import Iterator
 import undetected_chromedriver as uc
 import bs4 as bs
-from transactionObj import Transaction
+from classification.transactionObj import Transaction
 from glob import glob
 import os
 
