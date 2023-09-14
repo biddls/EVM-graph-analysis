@@ -9,4 +9,5 @@ venv
 *.exe
 /data/
 *.txt
+/lib/
 src/chromedriver
