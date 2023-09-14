@@ -3,6 +3,7 @@ import undetected_chromedriver as uc
 import bs4 as bs
 from transactionObj import Transaction
 from glob import glob
+import os
 
 
 def suppress_exception_in_del(uc):
@@ -21,21 +22,20 @@ suppress_exception_in_del(uc)
 
 
 class StackDecoder:
-    options = uc.ChromeOptions()
-    options.add_argument("--headless")  # type: ignore
-    driver = uc.Chrome(
-        driver_executable_path=".\\src\\chromedriver.exe", options=options
-    )
-
     def getStack(self, tx: str) -> list[Transaction]:
         if glob(f".\\data\\STACKS\\{tx}.html"):
             print("using saved file")
             with open(f".\\data\\STACKS\\{tx}.html", "r") as file:
                 contents: str = file.read()
         else:
+            options = uc.ChromeOptions()
+            options.add_argument("--headless")  # type: ignore
+            driver = uc.Chrome(
+                driver_executable_path=".\\src\\chromedriver.exe", options=options
+            )
             print("scraping from web")
-            StackDecoder.driver.get(f"https://ethtx.info/mainnet/{tx}/")
-            contents: str = StackDecoder.driver.page_source
+            driver.get(f"https://ethtx.info/mainnet/{tx}/")
+            contents: str = driver.page_source
             with open(f"data\\STACKS\\{tx}.html", "w") as file:
                 file.write(str(contents))
         soup = bs.BeautifulSoup(contents, "lxml")
@@ -48,6 +48,7 @@ class StackDecoder:
         )
 
         if not isinstance(tree, bs.element.Tag):
+            os.remove(f".\\data\\STACKS\\{tx}.html")
             raise TypeError("tree is not a bs4.element.Tag")
         print("generating stack")
         return list(StackDecoder.itterTree(tree))
