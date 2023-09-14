@@ -18,7 +18,7 @@
   // "black-formatter.args": ["--line-length 80"],
   "files.exclude": {
     "**/*__pycache__": true,
-    "src/chromedriver.exe": true,
+    "src/chromedriver*": true,
     ".venv": true,
   }
 }
