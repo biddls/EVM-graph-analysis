@@ -22,29 +22,23 @@ suppress_exception_in_del(uc)
 
 
 class StackDecoder:
-    options = uc.ChromeOptions()
-    options.add_argument("--headless")  # type: ignore
-    driver = uc.Chrome(
-        # driver_executable_path=".\\src\\chromedriver.exe", options=options
-        driver_executable_path="src/chromedriver",
-        options=options,
-    )
-
     def getStack(self, tx: str) -> list[Transaction]:
-        if glob(f".\\data\\STACKS\\{tx}.html"):
+        if glob(f"data/STACKS/{tx}.html"):
             print("using saved file")
-            with open(f".\\data\\STACKS\\{tx}.html", "r") as file:
+            with open(f"data/STACKS/{tx}.html", "r") as file:
                 contents: str = file.read()
         else:
             options = uc.ChromeOptions()
             options.add_argument("--headless")  # type: ignore
             driver = uc.Chrome(
-                driver_executable_path=".\\src\\chromedriver.exe", options=options
+                # driver_executable_path=".\\src\\chromedriver.exe", # windows
+                driver_executable_path="src/chromedriver",  # linux
+                options=options,
             )
             print("scraping from web")
             driver.get(f"https://ethtx.info/mainnet/{tx}/")
             contents: str = driver.page_source
-            with open(f"data\\STACKS\\{tx}.html", "w") as file:
+            with open(f"data/STACKS/{tx}.html", "w") as file:
                 file.write(str(contents))
         soup = bs.BeautifulSoup(contents, "lxml")
 
@@ -56,7 +50,7 @@ class StackDecoder:
         )
 
         if not isinstance(tree, bs.element.Tag):
-            os.remove(f".\\data\\STACKS\\{tx}.html")
+            os.remove(f"data/STACKS/{tx}.html")
             raise TypeError("tree is not a bs4.element.Tag")
         print("generating stack")
         return list(StackDecoder.itterTree(tree))
