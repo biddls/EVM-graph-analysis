@@ -23,9 +23,9 @@ suppress_exception_in_del(uc)
 
 class StackDecoder:
     def getStack(self, tx: str) -> list[Transaction]:
-        if glob(f"data/STACKS/{tx}.html"):
+        if glob(f"data/STACKS/exploits/{tx}.html"):
             print("using saved file")
-            with open(f"data/STACKS/{tx}.html", "r") as file:
+            with open(f"data/STACKS/exploits/{tx}.html", "r") as file:
                 contents: str = file.read()
         else:
             options = uc.ChromeOptions()
@@ -50,7 +50,7 @@ class StackDecoder:
         )
 
         if not isinstance(tree, bs.element.Tag):
-            os.remove(f"data/STACKS/{tx}.html")
+            os.remove(f"data/STACKS/exploits/{tx}.html")
             raise TypeError("tree is not a bs4.element.Tag")
         print("generating stack")
         return list(StackDecoder.itterTree(tree))

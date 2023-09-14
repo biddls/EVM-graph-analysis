@@ -15,6 +15,9 @@ txs = {
     "Euler": "0x47ac3527d02e6b9631c77fad1cdee7bfa77a8a7bfd4880dccbda5146ace4088f",
     "Uniswap Skim": "0x3228cfb5b1b5413181c8b3abb6fd4d241917b537770aa99f5ab6a10b76ad1d27",
     "iearn yUSD": "0x3755f81d15d1dfd7257240d1858fd3b6e960ea1d1d68f3ff31d18600f697bb4e",
+    "SushiSwap": "0xea3480f1f1d1f0b32283f8f282ce16403fe22ede35c0b71a732193e56c5c45e8",
+    "Euler 2": "0xc310a0affe2169d1f6feec1c63dbc7f7c62a887fa48795d327d4d2da2d6b111d",
+    "PolyChain": "0x390def749b71f516d8bf4329a4cb07bb3568a3627c25e607556621182a17f1f9",
 }
 
 
@@ -87,7 +90,7 @@ class GraphGen:
     def show(self):
         net = Network()
         net.from_nx(self.G)
-        net.show(f"data/STACKS/graph {self.tx}.html", notebook=False)
+        net.show(f"data/STACKS/exploits/graph {self.tx}.html", notebook=False)
 
     def showAll(self, graphs: list[nx.MultiDiGraph]) -> None:
         net = Network("700", "100%")
@@ -97,7 +100,7 @@ class GraphGen:
         net.from_nx(G)
         print(f"{len(net.edges)} edges")
         print(f"{len(net.nodes)} nodes")
-        net.show(f"data/STACKS/total graph.html", notebook=False)
+        net.show(f"data/STACKS/exploits/total graph.html", notebook=False)
 
 
 graphs = list()
