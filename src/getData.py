@@ -15,18 +15,15 @@ def getOpCodes(byteCodes: list[str]) -> list[list[int]]:
     Returns:
         list[list[int]]: list of list of opcodes
     """
-    opCodeList: list[list[int]] = list(
-        map(
-            lambda x: getOpCode(x[0]),
-            tqdm(byteCodes)
-        )
-    )
+    opCodeList: list[list[int]] = list(map(lambda x: getOpCode(x[0]), tqdm(byteCodes)))
     return opCodeList
+
 
 def getOpCode(byteCode: str) -> list[int]:
     evmCode = evmdasm.EvmBytecode(byteCode)
     evmCode = evmCode.disassemble()
     return list(map(lambda x: x.opcode, evmCode))
+
 
 def recursiveNgramGen(contList: list[list[int]]) -> dict[tuple[int], int]:
     """generates most widley used n ngrams
@@ -45,6 +42,7 @@ def recursiveNgramGen(contList: list[list[int]]) -> dict[tuple[int], int]:
             pass
 
     return ngrams
+
 
 def getStats(_conts, p=True):
     # temp = _conts[0]
@@ -65,7 +63,9 @@ def getStats(_conts, p=True):
     contsFlat = [item for sublist in _conts for item in sublist]
     lenContsFlat = len(contsFlat)
     opCodeFreq = dict(collections.Counter(contsFlat))
-    opCodeFreq = dict(sorted(opCodeFreq.items(), key=lambda value: value[1], reverse=True))
+    opCodeFreq = dict(
+        sorted(opCodeFreq.items(), key=lambda value: value[1], reverse=True)
+    )
 
     if not p:
         return
@@ -79,10 +79,9 @@ def getStats(_conts, p=True):
     # removes the long tail of opCodes that are used very infrequently
     cutOff = 0.02
     filteredOpCodeFreq = {
-        k: v/lenContsFlat
-        for k, v in opCodeFreq.items()
-        if v/lenContsFlat > cutOff}
-    
+        k: v / lenContsFlat for k, v in opCodeFreq.items() if v / lenContsFlat > cutOff
+    }
+
     names = list(filteredOpCodeFreq.keys())
     # print(names)
     names = [opCodeLookup.convertOpCode(x) for x in names]
@@ -90,12 +89,14 @@ def getStats(_conts, p=True):
     values = list(filteredOpCodeFreq.values())
     print(f"At {cutOff = } The toal proportion left is:{round(sum(values), 3) = }")
     print(f"This is captured by only {len(names)} opCodes")
-    
+
     return
-    
+
     _, ax = plt.subplots(1)
     ax.bar(range(len(filteredOpCodeFreq)), values, tick_label=names)
-    plt.title(f"opCode porpotion use, for all contracts, this data shows the top {round(sum(values)*100)}% by opCode use")
+    plt.title(
+        f"opCode porpotion use, for all contracts, this data shows the top {round(sum(values)*100)}% by opCode use"
+    )
     plt.xlabel("opCode")
     plt.ylabel("prorortion of opCodes")
     ax.set_ylim(0, max(filteredOpCodeFreq.values()) * 1.1)
@@ -112,15 +113,15 @@ if __name__ == "__main__":
     # print(opCodeLookup.convertOpCode(0))
     # print(opCodeLookup.opCodeTable)
     # exit(0)
-    if os.path.exists("data\\opCodes.txt"):
-        with open("data\\opCodes.txt", "r") as f:
+    if os.path.exists("data/opCodes.txt"):
+        with open("data/opCodes.txt", "r") as f:
             conts = list(map(eval, tqdm(f.readlines()[:10])))
         print("")
     else:
         with ByteCodeIO() as db:
             _byteCodes: list[str] = db.getColumn("contracts", "byteCode")
         conts = getOpCodes(_byteCodes)
-        with open("data\\opCodes.txt", "w") as f:
+        with open("data/opCodes.txt", "w") as f:
             for cont in conts:
                 f.write(str(cont) + "\n")
     getStats(conts)

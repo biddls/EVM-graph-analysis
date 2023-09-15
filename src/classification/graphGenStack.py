@@ -3,10 +3,13 @@ import networkx as nx
 # from classification.getStackTrace import StackDecoder
 from getStackTrace import StackDecoder
 from pyvis.network import Network
-from descriptors import txs
+from exploits import txs
+
+# from classification.exploits import txs
 
 
 def __str__(addr: tuple[str, str]):
+    return addr[0]
     if addr[0] == addr[1]:
         return addr[0][:9]
     else:
@@ -22,6 +25,7 @@ class GraphGen:
             return
         elif exploitName == str():
             raise ValueError("exploitName must be set if tx is set")
+        print(f"Generating graph for {exploitName}")
         self.tx = tx
         stack = StackDecoder().getStack(tx)
         self.dangerNode = __str__(stack[1]._from)

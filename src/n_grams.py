@@ -24,7 +24,12 @@ class nGramGen:
 
         if os.path.exists("data\\opCodes.txt"):
             with open("data\\opCodes.txt", "r") as f:
-                conts = list(map(eval, tqdm(f.readlines())))
+                conts = list(
+                    map(
+                        eval,
+                        tqdm(f.readlines(), desc="loading opCodes"),
+                    )
+                )
             print("")
         else:
             with ByteCodeIO() as db:

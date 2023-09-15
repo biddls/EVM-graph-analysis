@@ -16,3 +16,5 @@ openpyxl
 sortedcontainers
 networkx
 pyvis
+scikit-learn
+pyqt5

@@ -1,3 +1,8 @@
+"""
+_summary_ : 
+Given a TX, it coverted it into a graph from the stack trace of the transaction
+"""
+
 from typing import Iterator
 import undetected_chromedriver as uc
 import bs4 as bs
@@ -40,7 +45,7 @@ class StackDecoder:
             print("scraping from web")
             driver.get(f"https://ethtx.info/mainnet/{tx}/")
             contents: str = driver.page_source
-            with open(f"data/STACKS/{tx}.html", "w") as file:
+            with open(f"data/STACKS/exploits/{tx}.html", "w") as file:
                 file.write(str(contents))
         soup = bs.BeautifulSoup(contents, "lxml")
 
