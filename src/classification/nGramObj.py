@@ -53,6 +53,9 @@ class nGramObj:
     def __len__(self) -> int:
         return len(self.nGram)
 
+    def nGramCheck(self, nGram: Tuple[int, ...]) -> bool:
+        return self.nGram == nGram
+
     def __repr__(self) -> str:
         return f"nGramObj({self.nGram}, {self.count})"
 

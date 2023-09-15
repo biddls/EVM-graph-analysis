@@ -22,29 +22,33 @@ class nGramGen:
         self.finalCount = finalCount
         self.maxCount = maxCount
 
-        if os.path.exists("data\\opCodes.txt"):
-            with open("data\\opCodes.txt", "r") as f:
+        if os.path.exists("data/opCodes.txt"):
+            with open("data/opCodes.txt", "r") as f:
                 conts = list(
                     map(
                         eval,
                         tqdm(f.readlines(), desc="loading opCodes"),
                     )
                 )
+
             print("")
         else:
             with ByteCodeIO() as db:
-                _byteCodes: list[str] = db.getColumn("contracts", "byteCode")
+                _byteCodes: list[tuple[str, str]] = db.getColumn("contracts", "byteCode")  # type: ignore
             conts = getOpCodes(_byteCodes)
-            with open("data\\opCodes.txt", "w") as f:
+            with open("data/opCodes.txt", "w") as f:
                 for cont in conts:
                     f.write(str(cont) + "\n")
+        self.labeledCont = {k: v for k, v in conts}
+
+        conts = list(map(lambda x: x[1], conts))
 
         conts = list(filter(lambda x: len(x) != 0, conts))
+        self.corpus: list[list[int]] = conts
         best = getDiffers(conts, dims=15, n_clusters=500)
         conts = list(map(lambda x: conts[x], best))
 
         # all the data
-        self.corpus: list[list[int]] = conts
         contsFlat = [item for sublist in conts for item in sublist]
         opCodeFreq = dict(collections.Counter(contsFlat))
 
@@ -90,7 +94,7 @@ class nGramGen:
         self.cull(self.maxCount)
         print("nGrams generated")
 
-    def loadFromCache(self, forceEval=False) -> None:
+    def loadFromCache(self, forceEval=False) -> set[nGramObj]:
         with open("nGrams.txt", "r") as f:
             temp: list[tuple[tuple[int, ...], int]] = list(map(eval, f.readlines()))
         self.nGrams += list(
@@ -116,6 +120,7 @@ class nGramGen:
             )
         )
         print(f"{len(self.done_nGrams)} processed nGrams loaded from file")
+        return self.done_nGrams | set(self.nGrams)
 
     def genBetter_nGrams(self, batchSize: int = 1) -> None:
         itters = len(self.nGrams)

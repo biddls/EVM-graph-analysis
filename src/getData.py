@@ -6,7 +6,7 @@ import collections
 from matplotlib import pyplot as plt
 
 
-def getOpCodes(byteCodes: list[str]) -> list[list[int]]:
+def getOpCodes(byteCodes: list[tuple[str, str]]) -> list[tuple[str, list[int]]]:
     """gets all the opcodes from the bytecode
 
     Args:
@@ -15,33 +15,19 @@ def getOpCodes(byteCodes: list[str]) -> list[list[int]]:
     Returns:
         list[list[int]]: list of list of opcodes
     """
-    opCodeList: list[list[int]] = list(map(lambda x: getOpCode(x[0]), tqdm(byteCodes)))
+    opCodeList: list[tuple[str, list[int]]] = list(
+        map(lambda x: (x[0], getOpCode(x[1])), tqdm(byteCodes))
+    )
+    opCodeList = list(filter(lambda x: len(x) > 0, opCodeList))
     return opCodeList
 
 
 def getOpCode(byteCode: str) -> list[int]:
+    if byteCode == "None":
+        return []
     evmCode = evmdasm.EvmBytecode(byteCode)
     evmCode = evmCode.disassemble()
     return list(map(lambda x: x.opcode, evmCode))
-
-
-def recursiveNgramGen(contList: list[list[int]]) -> dict[tuple[int], int]:
-    """generates most widley used n ngrams
-
-    Args:
-        contList (list[list[int]]): list of contracts opcodes
-        n (int): size of list of ngrams
-
-    Returns:
-        dict[tuple[int]]: list of ngrams
-    """
-    ngrams: dict[tuple[int], int] = {}
-
-    for cont in tqdm(contList, desc="Generating ngrams"):
-        for i in range(len(cont) - 1):
-            pass
-
-    return ngrams
 
 
 def getStats(_conts, p=True):
@@ -54,7 +40,7 @@ def getStats(_conts, p=True):
     #         pass
     # print(f'|{"|".join(codes)}|')
     # print(f"{len(codes) = }, {len(temp) = }")
-    exit(0)
+
     lenConts = len(_conts)
     minLength = len(min(_conts, key=lambda x: len(x)))
     maxLength = len(max(_conts, key=lambda x: len(x)))
@@ -113,15 +99,16 @@ if __name__ == "__main__":
     # print(opCodeLookup.convertOpCode(0))
     # print(opCodeLookup.opCodeTable)
     # exit(0)
-    if os.path.exists("data/opCodes.txt"):
+    if False:  # os.path.exists("data/opCodes.txt"):
         with open("data/opCodes.txt", "r") as f:
             conts = list(map(eval, tqdm(f.readlines()[:10])))
         print("")
     else:
         with ByteCodeIO() as db:
-            _byteCodes: list[str] = db.getColumn("contracts", "byteCode")
+            _byteCodes: list[tuple[str, str]] = db.getColumn("contracts", "address, byteCode")  # type: ignore
         conts = getOpCodes(_byteCodes)
         with open("data/opCodes.txt", "w") as f:
             for cont in conts:
                 f.write(str(cont) + "\n")
+    exit()
     getStats(conts)

@@ -124,7 +124,7 @@ class EthGetCode:
 
 class ByteCodeIO:
     def __init__(self, dbPath: str = "contStore.db"):
-        self.sqliteConnection = sqlite3.connect("contStore.db")
+        self.sqliteConnection = sqlite3.connect(dbPath)
         self.cursor = self.sqliteConnection.cursor()
         # logging.info("Connected to SQLite")
 
@@ -236,6 +236,18 @@ class ByteCodeIO:
         if self.sqliteConnection:
             self.sqliteConnection.close()
             # logging.info("The SQLite connection is closed")
+
+    def cleanByteCodes(self):
+        clean = 'DELETE FROM "contracts" WHERE byteCode not LIKE "0x%"'
+        self.cursor.execute(clean)
+        responce = self.cursor.fetchall()
+        print(responce)
+        command = 'SELECT * FROM "contracts" WHERE byteCode not LIKE "0x%"'
+        self.cursor.execute(command)
+        record = self.cursor.fetchall()
+        print(record)
+        for rec in record:
+            print(rec)
 
 
 class opCodeLookup:

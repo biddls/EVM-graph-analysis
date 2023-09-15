@@ -11,7 +11,8 @@ def getDiffers(conts=None, dims=3, n_clusters=100) -> list[int] | Any:
 
     if conts is None:
         with open("data/opCodes.txt", "r") as f:
-            conts = list(map(eval, tqdm(f.readlines())))
+            conts = map(eval, tqdm(f.readlines()[:500]))
+        conts = list(map(lambda x: x[1], conts))
     prog = tqdm(range(4))
     # all the data
     conts = list(filter(lambda x: len(x) != 0, conts))
@@ -56,26 +57,26 @@ def getDiffers(conts=None, dims=3, n_clusters=100) -> list[int] | Any:
 
 if __name__ == "__main__":
     dims, out, u_labels, labels, centroids = getDiffers()
+    raise Exception("Doesnt work")
+    if dims > 3:
+        exit()
+    print("Starting Scatter Plot")
+    fig = plt.figure()
+    if dims == 3:
+        ax = fig.add_subplot(projection="3d")
+    else:
+        ax = fig.add_subplot()
+    for i in u_labels:
+        x = out[labels == i, 0]
+        y = out[labels == i, 1]
+        if dims == 3:
+            z = out[labels == i, 2]
 
-    # if dims > 3:
-    #     exit()
-    # print("Starting Scatter Plot")
-    # fig = plt.figure()
-    # if dims == 3:
-    #     ax = fig.add_subplot(projection="3d")
-    # else:
-    #     ax = fig.add_subplot()
-    # for i in u_labels:
-    #     x = out[labels == i, 0]
-    #     y = out[labels == i, 1]
-    #     if dims == 3:
-    #         z = out[labels == i, 2]
-
-    #         ax.scatter(x, y, z, label=i)
-    #     else:
-    #         ax.scatter(x, y, label=i)
-    # if dims == 3:
-    #     ax.scatter(centroids[:, 0], centroids[:, 1], centroids[:, 2], s=40, c="k")  # type: ignore
-    # else:
-    #     ax.scatter(centroids[:, 0], centroids[:, 1], s=40, c="k")
-    # plt.show()
+            ax.scatter(x, y, z, label=i)
+        else:
+            ax.scatter(x, y, label=i)
+    if dims == 3:
+        ax.scatter(centroids[:, 0], centroids[:, 1], centroids[:, 2], s=40, c="k")  # type: ignore
+    else:
+        ax.scatter(centroids[:, 0], centroids[:, 1], s=40, c="k")
+    plt.savefig("data/PCA.png")
