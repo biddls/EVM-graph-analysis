@@ -74,9 +74,9 @@ class EthGetCode:
         **kwargs,
     ) -> evmdasm.EvmInstructions | Any:
         paylode = EthGetCode.__getCodePayload
-        paylode["method"] = method
         paylode["id"] = _id
         paylode["params"][0] = param
+        paylode["method"] = method
         try:
             response = requests.post(
                 EthGetCode.__url, json=paylode, headers=EthGetCode.__headers

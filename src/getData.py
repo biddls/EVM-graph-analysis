@@ -1,3 +1,7 @@
+"""
+Gets all the addrs and opCodes from the DB anjd write them to a text file
+"""
+
 from dataOps import ByteCodeIO, opCodeLookup
 from tqdm import tqdm
 import evmdasm
@@ -103,6 +107,7 @@ if __name__ == "__main__":
         with open("data/opCodes.txt", "r") as f:
             conts = list(map(eval, tqdm(f.readlines()[:10])))
         print("")
+
     else:
         with ByteCodeIO() as db:
             _byteCodes: list[tuple[str, str]] = db.getColumn("contracts", "address, byteCode")  # type: ignore
@@ -110,5 +115,6 @@ if __name__ == "__main__":
         with open("data/opCodes.txt", "w") as f:
             for cont in conts:
                 f.write(str(cont) + "\n")
+
     exit()
     getStats(conts)

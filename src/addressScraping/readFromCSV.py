@@ -21,8 +21,8 @@ def roundrobin(*iterables):
 
 class Reader:
     @staticmethod
-    def readCSV(path, toDrop=set()):
-        df = pd.read_csv(path, low_memory=False).head(10000)
+    def readCSV(path, toDrop=set(), limit=1_000_000):
+        df = pd.read_csv(path, low_memory=False).head(limit)
         df = df.drop(columns=toDrop)
         return df
 
@@ -75,19 +75,19 @@ class Reader:
         return Contract(tags, address, "forceSet")
 
     @staticmethod
-    def main() -> set[Contract]:
+    def main(limit=100_000_000) -> set[Contract]:
         # processes ERC20's
-        path = "data\\erc20Addrs.csv"
+        path = "data/erc20Addrs.csv"
         print(f"reading {path}")
-        df = Reader.readCSV(path, {"blockchain"})
+        df = Reader.readCSV(path, {"blockchain"}, limit)
         # print(df.head())
         erc20s = Reader.convertToConts(df, "contract_address", {"symbol"}, progBar=True)
         print(f"{len(erc20s)} ERC20 contracts processed")
 
         # processes NFTs
-        path = "data\\nftAddrs.csv"
+        path = "data/nftAddrs.csv"
         print(f"reading {path}")
-        df = Reader.readCSV(path, {"blockchain"})
+        df = Reader.readCSV(path, {"blockchain"}, limit)
         # print(df.head())
         nfts = Reader.convertToConts(
             df, "contract_address", {"name", "symbol", "standard"}, progBar=True

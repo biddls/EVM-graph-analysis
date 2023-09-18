@@ -62,6 +62,8 @@ class WebScraper:
             code = EthGetCode.callEvmApi(cont.address, "eth_getCode")
             contracts[i].addByteCode(code)
 
+        contracts = list(filter(lambda x: x.byteCode is not None, contracts))
+
         return contracts
 
     def tagsFromEtherscan(
@@ -204,7 +206,7 @@ class WebScraper:
         # raise Exception ("Incomplete function")
         contracts: list[Contract] = list(Reader.main())
         for cont in tqdm(contracts):
-            self.singleAddr(cont)
+            self.singleAddr(cont, getTags=False)
 
     def singleAddr(self, cont: Contract, getTags=True):
         contract = list([cont])
@@ -249,4 +251,4 @@ if __name__ == "__main__":
     # scraper.fullTagUpdate()
     # scraper.reaplceByteCodeWithRaw()
     scraper.runCSV_scipt()
-    # scraper()
+    scraper()

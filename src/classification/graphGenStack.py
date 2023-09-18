@@ -1,11 +1,20 @@
 import networkx as nx
 
-# from classification.getStackTrace import StackDecoder
-from getStackTrace import StackDecoder
-from pyvis.network import Network
-from exploits import txs
+from classification.getStackTrace import StackDecoder
+from collections import Counter
+import pickle
 
-# from classification.exploits import txs
+# from getStackTrace import StackDecoder
+from pyvis.network import Network
+from addressScraping.contractObj import Contract
+from tqdm import tqdm
+import numpy as np
+import os
+
+# from exploits import txs
+from mainLoop import WebScraper
+
+from classification.exploits import txs
 
 
 def __str__(addr: tuple[str, str]):
@@ -88,7 +97,7 @@ class GraphGen:
         net.from_nx(self.G)
         net.show(f"data/STACKS/exploits/graph {self.tx}.html", notebook=False)
 
-    def showAll(self, graphs: list[nx.MultiDiGraph]) -> None:
+    def showAll(self, graphs: list[nx.MultiDiGraph], show=False) -> nx.MultiDiGraph:
         net = Network("700", "100%")
         G = nx.MultiDiGraph()
         for graph in graphs:
@@ -96,13 +105,62 @@ class GraphGen:
         net.from_nx(G)
         print(f"{len(net.edges)} edges")
         print(f"{len(net.nodes)} nodes")
-        net.show(f"data/STACKS/exploits/total graph.html", notebook=False)
+        with open("data/STACKS/addrs.txt", "w") as f:
+            for node in net.nodes:
+                f.write(f"{node['id']}\n")
+
+        if show:
+            net.show(f"data/STACKS/exploits/total graph.html", notebook=False)
+
+        vectors = self.vectoriseConts(list(G.nodes))
+        for node in tqdm(G.nodes):
+            G.nodes[node]["vector"] = np.array(vectors[node])
+
+        return G
+
+    def vectoriseConts(self, conts: list[str]) -> dict[str, list[int]]:
+        with open("data/opCodes.txt", "r") as f:
+            opCodes = list(map(eval, tqdm(f.readlines())))
+            opCodes = list(filter(lambda x: x[0] in conts, opCodes))
+
+        vectors: dict[str, list[int]] = dict()
+
+        for cont in tqdm(opCodes):
+            addr: str = cont[0]
+            cont = cont[1:][0]
+            freq = dict(Counter(cont[1:]))
+            vector: list[int] = [
+                freq[i] if i in freq.keys() else 0 for i in range(0, 256)
+            ]
+            vectors[addr] = vector
+
+        with open("data/vectorsForOneClass.txt", "w") as f:
+            for addr, vector in vectors.items():
+                cont = [addr, vector]
+                f.write(f"{str(cont)}\n")
+
+        return vectors
 
 
-if __name__ == "__main__":
+if os.path.exists("data/graphs.pickle"):
+    with open("data/graphs.pickle", "rb") as f:
+        G: nx.MultiDiGraph = pickle.load(f)
+    print("First nodes data:")
+    for node in G.nodes.data():
+        print(node)
+        break
+
+else:
     graphs = list()
     for name, tx in txs.items():
         graph = GraphGen(tx, name)
         graphs.append(graph.G)
+    G = GraphGen(str()).showAll(graphs)
+    with open("data/graphs.pickle", "wb") as f:
+        pickle.dump(G, f)
+    addrs = G.nodes
+    WS = WebScraper()
 
-    GraphGen(str()).showAll(graphs)
+    for addr in addrs:
+        addr = Contract([], addr, "noTags")
+        WS.singleAddr(addr)
