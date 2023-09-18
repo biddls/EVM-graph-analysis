@@ -75,9 +75,8 @@ class Reader:
         return Contract(tags, address, "forceSet")
 
     @staticmethod
-    def main(limit=100_000_000) -> set[Contract]:
+    def main(limit=100_000_000, path="data/erc20Addrs.csv") -> set[Contract]:
         # processes ERC20's
-        path = "data/erc20Addrs.csv"
         print(f"reading {path}")
         df = Reader.readCSV(path, {"blockchain"}, limit)
         # print(df.head())

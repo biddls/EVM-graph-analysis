@@ -24,8 +24,10 @@ def tokenise(nGrams: list[nGramObj], code: list[int]) -> np.ndarray:
     # creates output array
     npCode = np.zeros((len(code), len(freq) + len(nGrams)), dtype=np.bool_)
     for nGram in nGrams:
+        # for each ngram
         nGramSize = len(nGram)
         for i in range(len(code) - nGramSize):
+            # for all indicies in the code while taking to account the nGram size
             if nGram.nGramCheck(tuple(code[i : i + nGramSize])):
                 npCode[i : i + nGramSize, len(freq) + nGrams.index(nGram)] = True
             else:

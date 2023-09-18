@@ -62,7 +62,7 @@ class WebScraper:
             code = EthGetCode.callEvmApi(cont.address, "eth_getCode")
             contracts[i].addByteCode(code)
 
-        contracts = list(filter(lambda x: x.byteCode is not None, contracts))
+        contracts = list(filter(lambda x: x.byteCode != "", contracts))
 
         return contracts
 
@@ -208,26 +208,26 @@ class WebScraper:
         for cont in tqdm(contracts):
             self.singleAddr(cont, getTags=False)
 
-    def singleAddr(self, cont: Contract, getTags=True):
+    def singleAddr(self, cont: Contract, getTags=True, progBar=False):
         contract = list([cont])
         # print('\tgetByteCode')
-        contract = self.getByteCode(contract, progBar=False)
+        contract = self.getByteCode(contract, progBar=progBar)
         if len(contract) == 0:
             return
         # print('\ttagsFromEtherscan')
         if getTags:
-            contract = self.tagsFromEtherscan(contract, maxDuration=3, progBar=False)
+            contract = self.tagsFromEtherscan(contract, maxDuration=3, progBar=progBar)
             # print('\taddContractsToDB')
             if len(contract) == 0:
                 return
             self.addContractsToDB(
-                contract, writeTags=True, writeCode=True, progBar=False
+                contract, writeTags=True, writeCode=True, progBar=progBar
             )
         else:
             if len(contract) == 0:
                 return
             self.addContractsToDB(
-                contract, writeTags=False, writeCode=True, progBar=False
+                contract, writeTags=False, writeCode=True, progBar=progBar
             )
         return Contract
 
@@ -248,7 +248,7 @@ class WebScraper:
 
 if __name__ == "__main__":
     scraper = WebScraper()
-    # scraper.fullTagUpdate()
     # scraper.reaplceByteCodeWithRaw()
     scraper.runCSV_scipt()
+    scraper.fullTagUpdate()
     scraper()

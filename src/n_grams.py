@@ -45,8 +45,8 @@ class nGramGen:
 
         conts = list(filter(lambda x: len(x) != 0, conts))
         self.corpus: list[list[int]] = conts
-        best = getDiffers(conts, dims=15, n_clusters=500)
-        conts = list(map(lambda x: conts[x], best))
+        # best = getDiffers(conts, dims=15, n_clusters=500)
+        # conts = list(map(lambda x: conts[x], best))
 
         # all the data
         contsFlat = [item for sublist in conts for item in sublist]

@@ -67,7 +67,10 @@ class Contract:
                 raise Exception(f"Invalid source: {source}")
 
     def addByteCode(self, byteCode: evmdasm.EvmInstructions | str) -> None:
-        self.byteCode = byteCode
+        if len(byteCode) == 2:
+            return
+        if isinstance(byteCode, str):
+            self.byteCode = byteCode
 
     def dissassemble(self) -> evmdasm.EvmInstructions:
         if isinstance(self.byteCode, evmdasm.EvmInstructions):
@@ -106,7 +109,7 @@ class Contract:
     # returns the tags as an iterator
     def __iter__(self) -> Iterator[Tuple[str, str]]:
         return self.tags.__iter__()
-    
+
     def __hash__(self) -> int:
         return int(self.address, 16)
 

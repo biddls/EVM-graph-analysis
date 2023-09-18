@@ -238,16 +238,19 @@ class ByteCodeIO:
             # logging.info("The SQLite connection is closed")
 
     def cleanByteCodes(self):
-        clean = 'DELETE FROM "contracts" WHERE byteCode not LIKE "0x%"'
-        self.cursor.execute(clean)
-        responce = self.cursor.fetchall()
-        print(responce)
-        command = 'SELECT * FROM "contracts" WHERE byteCode not LIKE "0x%"'
-        self.cursor.execute(command)
-        record = self.cursor.fetchall()
-        print(record)
-        for rec in record:
-            print(rec)
+        clean1 = 'DELETE FROM "contracts" WHERE byteCode not LIKE "0x%"'
+        self.cursor.execute(clean1)
+        clean2 = 'DELETE FROM "contracts" WHERE byteCode="0x"'
+        self.cursor.execute(clean2)
+
+        try:
+            self.sqliteConnection.commit()
+            # print(f"taggs addes are {tags}")
+        except sqlite3.OperationalError as e:
+            raise e
+        except sqlite3.Error as error:
+            # logging.critical("Failed to insert records into sqlite table\n", error)
+            raise (error)
 
 
 class opCodeLookup:
@@ -272,6 +275,8 @@ class opCodeLookup:
 
 if __name__ == "__main__":
     raise Exception("This file should not be run as main")
+    with ByteCodeIO() as db:
+        db.cleanByteCodes()
     # addr = '0x4da27a545c0c5B758a6BA100e3a049001de870f5'
     # code = EthGetCode.getCode(addr, 0)
     # ByteCodeIO.writeCode(addr, code)

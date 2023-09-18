@@ -1,11 +1,10 @@
 from dataclasses import dataclass, field
 from functools import total_ordering
-from typing import Generator, List, Tuple, Self, Dict
+from typing import Generator, List, Tuple, Self
 from itertools import product
-
-# from collections.abc import Iterator
-# from tqdm import tqdm
 import numpy as np
+from multiprocessing import Pool
+from collections import Counter
 
 
 # defines the nGramObj class
@@ -87,7 +86,17 @@ class nGramObj:
     def makeChildren(
         self, corpus: List[list[int]], opCodeList: list[int]
     ) -> Generator[Self, None, None]:
-        for frontToken, backToken in product(opCodeList, repeat=2):
+        # orders the opcodes in the corpus by frequency
+        contsFlat = [item for sublist in corpus for item in sublist]
+        opCodeFreq = dict(Counter(contsFlat))
+        opCodePairs = list(product(opCodeList, repeat=2))
+        opCodePairs = sorted(
+            opCodePairs,
+            key=lambda pair: opCodeFreq[pair[0]] + opCodeFreq[pair[1]],
+            reverse=True,
+        )
+        # gernerates the new opCodes
+        for frontToken, backToken in opCodePairs:
             yield nGramObj(
                 self.nGram + (backToken,),
                 0,
@@ -110,41 +119,60 @@ class nGramObj:
         return self.count * (len(self.nGram) - 1)
 
     def runOnCorpus(self, corpus: List[list[int]]) -> int:
-        _nGram = np.array(self.nGram, dtype=np.uint8) + 1
-        for elem in corpus:
-            # tiles the elem array by the width of the nGram due to the sliding window
-            elem = np.array(elem, dtype=np.uint8)
-            mod = elem.size % len(self.nGram)
-            # if mod is 0 return 1 else do nothing
-            # avoids the missing of the sliding window
-            elem = np.pad(elem + 1, (0, len(self.nGram) + mod + 1))
-            elem = np.tile(elem, _nGram.size)
-            # repeats the nGram to cover more than the array
-            div = elem.size // len(self.nGram)
-            nGram = np.tile(_nGram, div + 1)
-            # gets the length diff
-            diff = nGram.size - elem.size
-            # print(f"{nGram.size - elem.size = }")
-            # print(f"{nGram.size = }")
-            # print(f"{elem.size = }")
-            # exit(0)
-            # pads out to length
-            elem = np.pad(elem, (0, diff))
-            # gets diff
-            elem = elem - nGram
-            # finds all runs of zeros
-            ranges = self.zero_runs(elem)
-            # process them into run length
-            diff = ranges[:, 1] - ranges[:, 0]
-            diff = np.sum(diff // len(self.nGram))
-            self.count += int(diff)
+        self.count = localRunOnCorpus(corpus, self.nGram)
         return self.count
 
-    @staticmethod
-    def zero_runs(a):
-        # Create an array that is 1 where a is 0, and pad each end with an extra 0.
-        iszero = np.pad(np.equal(a, 0, dtype=np.bool_), 1)
-        absdiff = np.abs(np.diff(iszero))
-        # Runs start and end where absdiff is 1.
-        ranges = np.where(absdiff == 1)[0].reshape(-1, 2)
-        return ranges
+
+def localRunOnCorpus(corpus: List[list[int]], selfNgram: Tuple[int, ...]) -> int:
+    _nGram = np.array(selfNgram, dtype=np.uint8) + 1
+    count = 0
+    cores = 12
+    pool = Pool(cores)
+    params = [(elem, selfNgram, _nGram) for elem in corpus]
+    count = pool.imap_unordered(runParalell, params, chunksize=len(corpus) // cores)
+    # for elem in corpus:
+    #     param = (elem, selfNgram, _nGram)
+    #     count += runSingle(*param)
+    return sum(count)
+
+
+def runParalell(param) -> int:
+    return runSingle(*param)
+
+
+def runSingle(_elem: list[int], selfNgram: Tuple[int, ...], _nGram: np.ndarray) -> int:
+    # tiles the elem array by the width of the nGram due to the sliding window
+    elem = np.array(_elem, dtype=np.uint8)
+    mod = elem.size % len(selfNgram)
+    # if mod is 0 return 1 else do nothing
+    # avoids the missing of the sliding window
+    elem = np.pad(elem + 1, (0, len(selfNgram) + mod + 1)).astype(np.uint8)
+    elem = np.tile(elem, _nGram.size)
+    # repeats the nGram to cover more than the array
+    div = elem.size // len(selfNgram)
+    nGram = np.tile(_nGram, div + 1)
+    # gets the length diff
+    diff = nGram.size - elem.size
+    # print(f"{nGram.size - elem.size = }")
+    # print(f"{nGram.size = }")
+    # print(f"{elem.size = }")
+    # exit(0)
+    # pads out to length
+    elem = np.pad(elem, (0, diff)).astype(np.uint8)
+    # gets diff
+    elem = np.subtract(elem, nGram).astype(np.uint8)
+    # finds all runs of zeros
+    ranges = zero_runs(elem)
+    # process them into run length
+    diff = np.subtract(ranges[:, 1], ranges[:, 0])
+    diff = np.sum(diff // len(selfNgram))
+    return int(diff)
+
+
+def zero_runs(a: np.ndarray) -> np.ndarray:
+    # Create an array that is 1 where a is 0, and pad each end with an extra 0.
+    iszero = np.pad(np.equal(a, 0), 1)
+    absdiff = np.abs(np.diff(iszero))
+    # Runs start and end where absdiff is 1.
+    ranges = np.where(absdiff == 1)[0].reshape(-1, 2)
+    return ranges

@@ -37,7 +37,7 @@ class GraphGen:
         print(f"Generating graph for {exploitName}")
         self.tx = tx
         stack = StackDecoder().getStack(tx)
-        self.dangerNode = __str__(stack[1]._from)
+        self.dangerNode = __str__(stack[1]._too)
         # print(stack[1], dangerNode)
         self.stack = list(filter(lambda x: x._from != tuple(), stack))
 
@@ -113,21 +113,27 @@ class GraphGen:
             net.show(f"data/STACKS/exploits/total graph.html", notebook=False)
 
         vectors = self.vectoriseConts(list(G.nodes))
+        keep = vectors.keys()
+        G = G.subgraph(keep)
+        G = nx.MultiDiGraph(G)
+        # print(G.nodes)
         for node in tqdm(G.nodes):
-            G.nodes[node]["vector"] = np.array(vectors[node])
+            vector = np.array(vectors[node])
+            G.nodes[node]["vector"] = vector / np.sum(vector)
 
         return G
 
     def vectoriseConts(self, conts: list[str]) -> dict[str, list[int]]:
         with open("data/opCodes.txt", "r") as f:
-            opCodes = list(map(eval, tqdm(f.readlines())))
+            opCodes = list(map(eval, tqdm(f.readlines(), desc="Reading opCodes")))
             opCodes = list(filter(lambda x: x[0] in conts, opCodes))
 
         vectors: dict[str, list[int]] = dict()
-
-        for cont in tqdm(opCodes):
+        print(len(conts), len(opCodes))
+        for cont in tqdm(opCodes, desc="Vectorising contracts"):
             addr: str = cont[0]
             cont = cont[1:][0]
+            # print(len(cont))
             freq = dict(Counter(cont[1:]))
             vector: list[int] = [
                 freq[i] if i in freq.keys() else 0 for i in range(0, 256)
@@ -142,25 +148,42 @@ class GraphGen:
         return vectors
 
 
-if os.path.exists("data/graphs.pickle"):
+if False:  # os.path.exists("data/graphs.pickle"):
     with open("data/graphs.pickle", "rb") as f:
         G: nx.MultiDiGraph = pickle.load(f)
     print("First nodes data:")
     for node in G.nodes.data():
-        print(node)
-        break
+        input(node)
 
 else:
     graphs = list()
     for name, tx in txs.items():
         graph = GraphGen(tx, name)
         graphs.append(graph.G)
-    G = GraphGen(str()).showAll(graphs)
+    G = GraphGen(str()).showAll(graphs, show=True)
+    empty = list(filter(lambda x: np.sum(x[1]["vector"]) == 0, G.nodes.data()))
+    print(empty)
     with open("data/graphs.pickle", "wb") as f:
         pickle.dump(G, f)
     addrs = G.nodes
     WS = WebScraper()
 
-    for addr in addrs:
-        addr = Contract([], addr, "noTags")
-        WS.singleAddr(addr)
+    # dangerous = addrs.data()
+    # dangerous = list(filter(lambda x: x[1]["dangerous"], dangerous))
+    # print(dangerous)
+    for node in addrs.data():
+        if np.sum(node[1]["vector"]) == 0:
+            print(node)
+            raise ValueError("Empty vector")
+    # for addr in dangerous[::-1]:
+    #     addr = Contract([], addr[0], "noTags")
+    #     print(addr)
+    #     byteCode = WS.getByteCode([addr])
+    #     print(byteCode)
+    #     WS.addContractsToDB(byteCode, writeCode=True, noForce=False)
+    #     out = WS.singleAddr(addr, progBar=True)
+    #     print(out)
+
+    # for addr in addrs:
+    #     addr = Contract([], addr, "noTags")
+    #     WS.singleAddr(addr)

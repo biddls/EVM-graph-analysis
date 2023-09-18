@@ -8,6 +8,8 @@ import evmdasm
 import os
 import collections
 from matplotlib import pyplot as plt
+from mainLoop import WebScraper
+from addressScraping.contractObj import Contract
 
 
 def getOpCodes(byteCodes: list[tuple[str, str]]) -> list[tuple[str, list[int]]]:
@@ -19,10 +21,11 @@ def getOpCodes(byteCodes: list[tuple[str, str]]) -> list[tuple[str, list[int]]]:
     Returns:
         list[list[int]]: list of list of opcodes
     """
+    byteCodes = list(filter(lambda x: len(x[1]) > 2, tqdm(byteCodes)))
     opCodeList: list[tuple[str, list[int]]] = list(
         map(lambda x: (x[0], getOpCode(x[1])), tqdm(byteCodes))
     )
-    opCodeList = list(filter(lambda x: len(x) > 0, opCodeList))
+    opCodeList = list(filter(lambda x: len(x[1]) > 0, opCodeList))
     return opCodeList
 
 
@@ -109,8 +112,17 @@ if __name__ == "__main__":
         print("")
 
     else:
+        # print(len(addrs))
+        # WS = WebScraper()
+        # _byteCodes = WS.getByteCode([Contract([], addr, "noTags") for addr in addrs])
+        # _byteCodes = [
+        #     tuple([addr, str(code.byteCode)])
+        #     for addr, code in tqdm(zip(addrs, _byteCodes))
+        # ]
+
         with ByteCodeIO() as db:
             _byteCodes: list[tuple[str, str]] = db.getColumn("contracts", "address, byteCode")  # type: ignore
+        # _byteCodes = list(filter(lambda x: x[0] in addrs, _byteCodes))
         conts = getOpCodes(_byteCodes)
         with open("data/opCodes.txt", "w") as f:
             for cont in conts:
