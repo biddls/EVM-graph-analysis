@@ -129,7 +129,7 @@ class nGramObj:
                     genChildren=True,
                 )
         except KeyboardInterrupt:
-            return
+            raise KeyboardInterrupt
 
     def heruistic(self) -> int:
         return self.count * (len(self.nGram) - 1)

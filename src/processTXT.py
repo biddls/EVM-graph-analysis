@@ -1,6 +1,7 @@
 from mainLoop import WebScraper
 from addressScraping.contractObj import Contract
 from tqdm import tqdm
+from dataOps import ByteCodeIO
 
 # from concurrent.futures import ThreadPoolExecutor
 # from concurrent.futures import as_completed
@@ -22,11 +23,13 @@ for addr in tqdm(addrs, desc="Processing"):
 if conts == list():
     raise Exception("No addresses found")
 
+print(f"{len(conts)} contracts found")
+with ByteCodeIO() as db:
+    res = db.getColumn("contracts", "address")
+res = set([addr[0] for addr in res])
+print(f"{len(res)} contracts in database")
+conts = list(filter(lambda x: x.address not in res, conts))
+print(f"{len(conts)} contracts left")
+
 for cont in tqdm(conts, desc="Writing"):
     WS.singleAddr(cont)
-
-# with ThreadPoolExecutor() as executor:
-#     pool = executor.map(WS.singleAddr, tqdm(conts, desc="Starting"))
-#     # pool = executor.map(len, tqdm(conts, desc="Starting"))
-
-#     results = list(tqdm(pool, total=len(conts)))

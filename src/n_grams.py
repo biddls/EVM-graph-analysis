@@ -13,7 +13,13 @@ class nGramGen:
     nGrams: List[nGramObj] = list()
     done_nGrams: set[nGramObj] = set()
 
-    def __init__(self, finalCount: int, maxCount: int, cutOff: float = 0.02):
+    def __init__(
+        self,
+        finalCount: int,
+        maxCount: int,
+        cutOff: float = 0.02,
+        rowsToReadIn=100_000_00,
+    ):
         # loads in cached data if it exists else generates it
         if finalCount > maxCount:
             raise ValueError(
@@ -27,18 +33,13 @@ class nGramGen:
                 conts = list(
                     map(
                         eval,
-                        tqdm(f.readlines(), desc="loading opCodes"),
+                        tqdm(f.readlines()[:rowsToReadIn], desc="loading opCodes"),
                     )
                 )
 
             print("")
         else:
-            with ByteCodeIO() as db:
-                _byteCodes: list[tuple[str, str]] = db.getColumn("contracts", "byteCode")  # type: ignore
-            conts = getOpCodes(_byteCodes)
-            with open("data/opCodes.txt", "w") as f:
-                for cont in conts:
-                    f.write(str(cont) + "\n")
+            raise FileNotFoundError("data/opCodes.txt not found")
         self.labeledCont = {k: v for k, v in conts}
 
         conts = list(map(lambda x: x[1], conts))
@@ -115,11 +116,19 @@ class nGramGen:
             temp: list[tuple[tuple[int, ...], int]] = list(map(eval, f.readlines()))
         self.done_nGrams = set(
             map(
-                lambda nGram: nGramObj(*nGram, self.corpus, self.opCodes),
+                lambda nGram: nGramObj(
+                    *nGram,
+                    self.corpus,
+                    self.opCodes,
+                    runOnCorpus=forceEval,
+                    genChildren=False,
+                ),
                 temp,
             )
         )
         print(f"{len(self.done_nGrams)} processed nGrams loaded from file")
+        self.save(self.nGrams, "nGrams.txt")
+        self.save(self.done_nGrams, "done_nGrams.txt")
         return self.done_nGrams | set(self.nGrams)
 
     def genBetter_nGrams(self, batchSize: int = 1) -> None:
@@ -175,7 +184,7 @@ class nGramGen:
 if __name__ == "__main__":
     nGramManager = nGramGen(2000, 10000)
     if (os.path.exists("nGrams.txt")) and (os.path.exists("done_nGrams.txt")):
-        nGramManager.loadFromCache()
+        nGramManager.loadFromCache(forceEval=False)
     else:
         nGramManager.gen_all_nGrams(3)
 

@@ -207,6 +207,13 @@ class WebScraper:
     def runCSV_scipt(self):
         # raise Exception ("Incomplete function")
         contracts: list[Contract] = list(Reader.main())
+        print(f"{len(contracts)} contracts found")
+        with self.db() as db:
+            res = db.getColumn("contracts", "address")
+        res = set([addr[0] for addr in res])
+        print(f"{len(res)} contracts in database")
+        contracts = list(filter(lambda x: x.address not in res, contracts))
+        print(f"{len(contracts)} contracts left")
         for cont in tqdm(contracts):
             self.singleAddr(cont, getTags=False)
 
