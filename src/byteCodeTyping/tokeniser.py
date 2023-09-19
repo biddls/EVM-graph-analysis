@@ -2,8 +2,8 @@ from n_grams import nGramGen, nGramObj
 from tqdm import tqdm
 import numpy as np
 from glob import glob
-import pandas as pd
 import plotly.express as px
+from multiprocessing import Pool
 
 # exit(0)
 # loads in data
