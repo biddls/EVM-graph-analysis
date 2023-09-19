@@ -151,6 +151,10 @@ class nGramGen:
                 itters += batchSize
                 if len(self.nGrams) > self.maxCount * 1.1:
                     self.cull(self.maxCount)
+                # every 500 itterations it saves the progress
+                if itters % 500 == 0:
+                    self.save(self.nGrams, "nGrams.txt")
+                    self.save(self.done_nGrams, "done_nGrams.txt")
                 av = round(
                     sum(
                         [nGram.heruistic() for nGram in self.nGrams if nGram.count != 0]
@@ -164,8 +168,8 @@ class nGramGen:
                 itter.set_description_str(f"{av=}|{top=}|{maxLen=}|len={_len}")
         except KeyboardInterrupt:
             itter.close()
-            self.cull(self.maxCount)
             print("SAVING PROGRESS")
+            self.cull(self.maxCount)
             self.save(self.nGrams, "nGrams.txt")
             self.save(self.done_nGrams, "done_nGrams.txt")
 
@@ -184,7 +188,7 @@ class nGramGen:
 if __name__ == "__main__":
     nGramManager = nGramGen(2000, 10000)
     if (os.path.exists("nGrams.txt")) and (os.path.exists("done_nGrams.txt")):
-        nGramManager.loadFromCache(forceEval=False)
+        nGramManager.loadFromCache(forceEval=True)
     else:
         nGramManager.gen_all_nGrams(3)
 

@@ -1,13 +1,14 @@
-from n_grams import nGramGen, nGramObj
+from n_grams import nGramGen
 from tqdm import tqdm
-import numpy as np
-from glob import glob
-import plotly.express as px
-from multiprocessing import Pool
 
-# exit(0)
+# import numpy as np
+# from glob import glob
+# import plotly.express as px
+import json
+import os
+
 # loads in data
-nGramManager = nGramGen(2000, 10000, rowsToReadIn=100_000)
+nGramManager = nGramGen(2_000, 10_000)
 nGrams = nGramManager.loadFromCache()
 
 # sorts nGrams by heruistic and then length
@@ -15,82 +16,79 @@ nGrams = sorted(nGrams, key=len, reverse=True)
 nGrams = sorted(nGrams, key=lambda nGram: nGram.heruistic(), reverse=True)
 
 # filter out bad nGrams
-totalHeruistic = sum(map(lambda x: x.heruistic(), nGrams))
-nGrams = list(filter(lambda x: x.heruistic() > totalHeruistic / 1000, nGrams))
+# totalHeruistic = sum(map(lambda x: x.heruistic(), nGrams))
+# nGrams = list(filter(lambda x: x.heruistic() > totalHeruistic / 1000, nGrams))
 
 corpus: dict[str, list[int]] = nGramManager.labeledCont
 freq = nGramManager.opCodeFreq.keys()
+
+# take top nGrams
+nGrams = nGrams[: 512 - len(freq)]
+
 print(f"Size of corpus is: {len(corpus)}")
 print(f"Number of nGrams: {len(nGrams)}")
 print(f"Number of opCodes: {len(freq)}")
+print(f"Depth of nGrams: {len(nGrams) + len(freq)}")
 
 
-def tokenise(
-    nGrams: list[nGramObj], code: list[int], testing=False
-) -> tuple[np.ndarray, int]:
-    # creates output array
-    npCode = np.zeros((len(freq) + len(nGrams), len(code)), dtype=np.uint8)
-    if testing:
-        itter = tqdm(enumerate(nGrams), position=1, leave=False, total=len(nGrams))
-    else:
-        itter = enumerate(nGrams)
-    for nGramPos, nGram in itter:
-        # for each ngram
-        nGramSize = len(nGram)
-        # itterates over every opCode in the code with padding
-        i = 0
-        for i, _ in enumerate(code):
-            if i >= len(code) - nGramSize + 1:
+def tokenise(code: list[int]) -> tuple[list[int], int]:
+    # print("Entered")
+    tokens = list()
+    skip = 0
+    for codeIndex, opCode in enumerate(code):
+        if skip > 0:
+            skip -= 1
+            continue
+        itter = enumerate(nGrams, start=len(freq))
+        for nGramPos, nGram in itter:
+            if codeIndex >= len(code) - len(nGram) + 1:
                 continue
-            # for all indicies in the code while taking to account the nGram size
-            if nGram.nGramCheck(tuple(code[i : i + nGramSize])):
-                # if the nGram matches the code
-                npCode[nGramPos + len(freq), i] = 2
-                # npCode = np.delete(npCode, np.s_[i + 1 : i + nGramSize], axis=1)
-                npCode[nGramPos + len(freq), i + 1 : i + nGramSize] = 1
-                # breaks on the first (and best nGRam)
-                # break
-            # if no nGram is found (no break) then it is a single opCode
-            # else:
-            # print(code[i], i)
-            npCode[code[i], i] = 2
-        # print(i, len(code))
-    # removes all the columns in npCode that are 1
-    if testing:
-        print(f"\n{npCode.shape = }")
-    # npCode = npCode[:, ~np.all(npCode == 1, axis=0)]
+            if nGram.nGramCheck(tuple(code[codeIndex : codeIndex + len(nGram)])):
+                tokens.append(nGramPos)
+                skip = len(nGram) - 1
+                break
+        # if no nGram was found
+        else:
+            tokens.append(opCode)
 
-    colsToDrop = np.unique(np.where(npCode == 1)[1])
-    if testing:
-        print(f"{colsToDrop = }")
-        print(f"{colsToDrop.shape = }")
-    # npCode = npCode[:, np.where(npCode == 1)[1]]
-    npCode = np.delete(npCode, colsToDrop, axis=1)
-    if testing:
-        print(f"{npCode.shape = }")
-    # npCode = npCode == 1
-    return npCode, len(code)
+    # tokens = np.array(tokens, dtype=np.uint)
+    # # print(np.max(tokens), len(freq) + len(nGrams))
+
+    # # creating a 2D array filled with 0's
+    # npCode = np.zeros((len(freq) + len(nGrams), tokens.size), dtype=np.bool_)
+
+    # # replacing 0 with a 1 at the index of the original array
+    # npCode[tokens, np.arange(tokens.size)] = True
+
+    return tokens, len(code)
 
 
-done = list(
-    map(lambda x: x.split("/")[-1].split(".npy")[0], glob("data/tokenised/*.npy"))
-)
-corpus = {addr: code for addr, code in corpus.items() if addr not in done}
+# done = list(
+#     map(lambda x: x.split("/")[-1].split(".npy")[0], glob("data/tokenised/*.npy"))
+# )
+if os.path.exists("data/tokenised.json"):
+    with open("data/tokenised.json", "r") as f:
+        done: dict[str, list[int]] = json.load(f)
+else:
+    done: dict[str, list[int]] = dict()
 
+corpus = {addr: code for addr, code in corpus.items() if addr not in done.keys()}
+# sort corpus by value length
+# corpus = dict(sorted(corpus.items(), key=lambda x: len(x[1]), reverse=True))
 newSize, oldSize = 0, 0
-for addr, code in tqdm(corpus.items(), position=0, leave=True):
-    tokenised, _len = tokenise(nGrams, code)
-    newSize += tokenised.shape[1]
-    oldSize += _len
-    # np.save(f"data/tokenised/{addr}.npy", tokenised)
-    # print(tokenised)
-    # print(tokenised.shape)
-    # df = pd.DataFrame(tokenised)
-    # df.to_csv("data/tokenised.csv", index=False, header=False)
-
-    # fig = px.imshow(tokenised)
-    # fig.show()
-    # break
-print(f"New size: {newSize}")
-print(f"Old size: {oldSize}")
-print(f"Compression: {newSize / oldSize}")
+itter = tqdm(corpus.items())
+try:
+    for addr, code in itter:
+        tokenised, _len = tokenise(code)
+        newSize += len(tokenised)
+        oldSize += _len
+        itter.set_description(f"Ratio:{100 * newSize / oldSize: 5.1f}%")
+        done[addr] = tokenised
+        # fig = px.imshow(tokenised)
+        # fig.show()
+        # break
+except KeyboardInterrupt:
+    pass
+finally:
+    with open("data/tokenised.json", "w") as f:
+        json.dump(done, f)

@@ -142,7 +142,7 @@ class nGramObj:
 def localRunOnCorpus(corpus: List[list[int]], selfNgram: Tuple[int, ...]) -> int:
     _nGram = np.array(selfNgram, dtype=np.uint8) + 1
     count = 0
-    cores = 12
+    cores = 8
     pool = Pool(cores)
     params = [(elem, selfNgram, _nGram) for elem in corpus]
     count = pool.imap_unordered(runParalell, params, chunksize=len(corpus) // cores)
