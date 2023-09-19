@@ -53,6 +53,19 @@ class nGramObj:
         return len(self.nGram)
 
     def nGramCheck(self, nGram: Tuple[int, ...]) -> bool:
+        """compares the object with a given nGram
+
+        Args:
+            nGram (Tuple[int, ...]): nGram being passed
+
+        Returns:
+            bool: true if they match, false if they dont
+        """
+        if len(self) != len(nGram):
+            print(f"{self.nGram = }")
+            print(f"{nGram = }")
+            print(f"{len(self) = } {len(nGram) = }")
+            raise ValueError("nGrams must be the same length to be compared")
         return self.nGram == nGram
 
     def __repr__(self) -> str:
@@ -86,34 +99,37 @@ class nGramObj:
     def makeChildren(
         self, corpus: List[list[int]], opCodeList: list[int]
     ) -> Generator[Self, None, None]:
-        # orders the opcodes in the corpus by frequency
-        contsFlat = [item for sublist in corpus for item in sublist]
-        opCodeFreq = dict(Counter(contsFlat))
-        opCodePairs = list(product(opCodeList, repeat=2))
-        opCodePairs = sorted(
-            opCodePairs,
-            key=lambda pair: opCodeFreq[pair[0]] + opCodeFreq[pair[1]],
-            reverse=True,
-        )
-        # gernerates the new opCodes
-        for frontToken, backToken in opCodePairs:
-            yield nGramObj(
-                self.nGram + (backToken,),
-                0,
-                corpus,
-                opCodeList,
-                runOnCorpus=True,
-                genChildren=True,
+        try:
+            # orders the opcodes in the corpus by frequency
+            contsFlat = [item for sublist in corpus for item in sublist]
+            opCodeFreq = dict(Counter(contsFlat))
+            opCodePairs = list(product(opCodeList, repeat=2))
+            opCodePairs = sorted(
+                opCodePairs,
+                key=lambda pair: opCodeFreq[pair[0]] + opCodeFreq[pair[1]],
+                reverse=True,
             )
+            # gernerates the new opCodes
+            for frontToken, backToken in opCodePairs:
+                yield nGramObj(
+                    self.nGram + (backToken,),
+                    0,
+                    corpus,
+                    opCodeList,
+                    runOnCorpus=True,
+                    genChildren=True,
+                )
 
-            yield nGramObj(
-                (frontToken,) + self.nGram,
-                0,
-                corpus,
-                opCodeList,
-                runOnCorpus=True,
-                genChildren=True,
-            )
+                yield nGramObj(
+                    (frontToken,) + self.nGram,
+                    0,
+                    corpus,
+                    opCodeList,
+                    runOnCorpus=True,
+                    genChildren=True,
+                )
+        except KeyboardInterrupt:
+            return
 
     def heruistic(self) -> int:
         return self.count * (len(self.nGram) - 1)
@@ -137,7 +153,10 @@ def localRunOnCorpus(corpus: List[list[int]], selfNgram: Tuple[int, ...]) -> int
 
 
 def runParalell(param) -> int:
-    return runSingle(*param)
+    try:
+        return runSingle(*param)
+    except KeyboardInterrupt:
+        return 0
 
 
 def runSingle(_elem: list[int], selfNgram: Tuple[int, ...], _nGram: np.ndarray) -> int:

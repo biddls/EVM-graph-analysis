@@ -67,6 +67,8 @@ class Contract:
                 raise Exception(f"Invalid source: {source}")
 
     def addByteCode(self, byteCode: evmdasm.EvmInstructions | str) -> None:
+        if byteCode is None:
+            return
         if len(byteCode) == 2:
             return
         if isinstance(byteCode, str):

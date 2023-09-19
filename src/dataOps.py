@@ -72,7 +72,7 @@ class EthGetCode:
         method: Literal["eth_getCode", "eth_getTransactionCount"],
         _id: int = int(time()),
         **kwargs,
-    ) -> evmdasm.EvmInstructions | Any:
+    ) -> evmdasm.EvmInstructions | None:
         paylode = EthGetCode.__getCodePayload
         paylode["id"] = _id
         paylode["params"][0] = param
@@ -97,11 +97,12 @@ class EthGetCode:
         return result
 
     @staticmethod
-    def __processResponce__(method, result, **kwargs) -> evmdasm.EvmInstructions | Any:
+    def __processResponce__(method, result, **kwargs) -> evmdasm.EvmInstructions | None:
         match method:
             case "eth_getCode":
-                byteCode = result["result"]
-
+                byteCode = result.get("result", None)
+                if byteCode is None:
+                    return None
                 if not kwargs.get("convert", False):
                     return byteCode
 

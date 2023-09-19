@@ -60,6 +60,8 @@ class WebScraper:
             itter = enumerate(contracts)
         for i, cont in itter:
             code = EthGetCode.callEvmApi(cont.address, "eth_getCode")
+            if code is None:
+                continue
             contracts[i].addByteCode(code)
 
         contracts = list(filter(lambda x: x.byteCode != "", contracts))

@@ -6,6 +6,7 @@ import undetected_chromedriver as uc
 import time
 from addressScraping.contractObj import Contract
 from dataOps import ByteCodeIO
+from selenium.common.exceptions import TimeoutException
 
 
 def suppress_exception_in_del(uc):
@@ -52,7 +53,10 @@ class TagGetter:
     def etherScanGetter(
         self, addr: str, maxDuration: float, addrToken: str
     ) -> Contract:
-        self.driver.get(f"https://etherscan.io/{addrToken}/{addr}")
+        try:
+            self.driver.get(f"https://etherscan.io/{addrToken}/{addr}")
+        except TimeoutException:
+            return Contract(set(), addr, "noTags")
         start: float = time.time()
         while True:
             contents: str = self.driver.page_source
@@ -78,6 +82,7 @@ class TagGetter:
                 cont = Contract(tags, addr, "etherscanTags")
                 return cont
 
+            # if no tags r found
             if time.time() - start > maxDuration:
                 return Contract(set(), addr, "noTags")
 
