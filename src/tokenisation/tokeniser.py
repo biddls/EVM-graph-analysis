@@ -51,15 +51,6 @@ def tokenise(code: list[int]) -> tuple[list[int], int]:
         else:
             tokens.append(opCode)
 
-    # tokens = np.array(tokens, dtype=np.uint)
-    # # print(np.max(tokens), len(freq) + len(nGrams))
-
-    # # creating a 2D array filled with 0's
-    # npCode = np.zeros((len(freq) + len(nGrams), tokens.size), dtype=np.bool_)
-
-    # # replacing 0 with a 1 at the index of the original array
-    # npCode[tokens, np.arange(tokens.size)] = True
-
     return tokens, len(code)
 
 

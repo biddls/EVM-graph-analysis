@@ -1,3 +1,6 @@
+"""
+Loads in the tags from the DB and then allows for easy manual grooping of them
+"""
 from dataOps import ByteCodeIO
 from collections import Counter
 import json
@@ -8,10 +11,14 @@ import os
 # loads in all the tags captured
 with ByteCodeIO() as db:
     tags = db.getColumn("addressTags", "tag")
+tags = [tag[0] for tag in tags]
 tags = Counter(tags)
 tags = dict(sorted(tags.items(), key=lambda x: x[1]))
 # filters them to only the important ones
-tags = {k[0]: v for k, v in tags.items() if v > 2}
+tags = {k: v for k, v in tags.items() if v > 2}
+with open("data/tags freq count.json", "w") as f:
+    f.write(json.dumps(tags, indent=4))
+
 print(json.dumps(tags, indent=4))
 print(f"{sum(tags.values())} tags counted")
 # loads already processed tags

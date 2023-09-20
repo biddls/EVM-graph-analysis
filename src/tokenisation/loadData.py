@@ -39,4 +39,12 @@ if os.path.exists("data/labels.json"):
 else:
     raise FileNotFoundError("data/labels.json not found")
 
+# load in the tag freq data
+if os.path.exists("data/tags freq count.json"):
+    with open("data/tags freq count.json", "r") as f:
+        freq: dict[str, int] = json.load(f)
+else:
+    raise FileNotFoundError("data/tags freq count.json not found")
+
 print(json.dumps(labels, indent=4))
+print(json.dumps(freq, indent=4))
