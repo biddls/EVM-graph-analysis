@@ -3,6 +3,7 @@ This checks N sources for address and or tags and stored
 the data in an SQL database
 """
 
+from random import shuffle
 from time import sleep, time
 from typing import Any
 from addressScraping.contractObj import Contract
@@ -213,6 +214,7 @@ class WebScraper:
         res = set([addr[0] for addr in res])
         print(f"{len(res)} contracts in database")
         contracts = list(filter(lambda x: x.address not in res, contracts))
+        shuffle(contracts)
         print(f"{len(contracts)} contracts left")
         for cont in tqdm(contracts):
             self.singleAddr(cont, getTags=False)

@@ -3,9 +3,6 @@ from addressScraping.contractObj import Contract
 from tqdm import tqdm
 from dataOps import ByteCodeIO
 
-# from concurrent.futures import ThreadPoolExecutor
-# from concurrent.futures import as_completed
-
 WS = WebScraper()
 
 # path = input("Enter path to txt file: ")

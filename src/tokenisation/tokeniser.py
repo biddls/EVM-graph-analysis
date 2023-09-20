@@ -87,7 +87,7 @@ try:
         # fig = px.imshow(tokenised)
         # fig.show()
         # break
-except KeyboardInterrupt:
+except KeyboardInterrupt or Exception:
     pass
 finally:
     with open("data/tokenised.json", "w") as f:

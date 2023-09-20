@@ -59,7 +59,7 @@ class StackDecoder:
 
         if not isinstance(tree, bs.element.Tag):
             os.remove(f"data/STACKS/exploits/{tx}.html")
-            raise TypeError("tree is not a bs4.element.Tag")
+            raise TypeError(f"tree is not a bs4.element.Tag\n{tx}")
         print("generating stack")
         return list(StackDecoder.itterTree(tree))
 

@@ -14,7 +14,7 @@ else:
 
 
 def convertTo_npArr(item: tuple[str, list[int]]) -> tuple[str, np.ndarray]:
-    tokens = np.array(item, dtype=np.uint)
+    tokens = np.array(item[1], dtype=np.uint)
     # print(np.max(tokens), len(freq) + len(nGrams))
 
     # creating a 2D array filled with 0's
@@ -31,3 +31,12 @@ loaded = dict(
         tqdm(done.items(), desc="converting to np array"),
     )
 )
+
+# load in the labels
+if os.path.exists("data/labels.json"):
+    with open("data/labels.json", "r") as f:
+        labels: dict[str, int] = json.load(f)
+else:
+    raise FileNotFoundError("data/labels.json not found")
+
+print(json.dumps(labels, indent=4))
